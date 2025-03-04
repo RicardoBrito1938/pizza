@@ -1,0 +1,80 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "vcs": {
+    "enabled": false,
+    "clientKind": "git",
+    "useIgnoreFile": false
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "ignore": ["node_modules", ".expo", "ios", "android", ".vscode"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "tab"
+  },
+  "json": {
+    "parser": { "allowComments": true },
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "tab"
+    }
+  },
+  "organizeImports": {
+    "enabled": false
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "suspicious": {
+        "noSkippedTests": { "level": "warn", "fix": "none" },
+        "noFocusedTests": {
+          "level": "warn",
+          "fix": "none"
+        },
+        "noExplicitAny": "error",
+        "noEmptyInterface": "error",
+        "noConsoleLog": {
+          "level": "warn",
+          "fix": "none"
+        },
+        "noArrayIndexKey": "off"
+      },
+      "a11y": {
+        "useKeyWithClickEvents": "off"
+      },
+      "style": {
+        "noYodaExpression": "error",
+        "noVar": "error",
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "filenameCases": ["kebab-case"]
+          }
+        }
+      },
+      "complexity": {
+        "useArrowFunction": "error"
+      },
+      "correctness": {
+        "noUnusedImports": {
+          "level": "warn",
+          "fix": "none"
+        },
+        "noUnusedVariables": {
+          "level": "warn",
+          "fix": "none"
+        },
+        "noChildrenProp": "off"
+      },
+      "recommended": true
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "asNeeded",
+      "jsxQuoteStyle": "single"
+    }
+  }
+}

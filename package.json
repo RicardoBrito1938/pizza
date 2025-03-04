@@ -15,7 +15,10 @@
     "preset": "jest-expo"
   },
   "dependencies": {
+    "@expo-google-fonts/dm-sans": "^0.2.3",
+    "@expo-google-fonts/dm-serif-display": "^0.2.3",
     "@expo/vector-icons": "^14.0.2",
+    "@fast-styles/react": "^0.2.9",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
     "expo": "~52.0.37",
@@ -42,6 +45,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@biomejs/biome": "1.9.4",
     "@types/jest": "^29.5.12",
     "@types/react": "~18.3.12",
     "@types/react-test-renderer": "^18.3.0",
