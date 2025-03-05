@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getBottomSpace } from "react-native-iphone-x-helper";
 import brandImg from "@/assets/images/brand.png";
+import { useAuth } from "@/hooks/auth";
+import { useState } from "react";
 
 const Container = styled(LinearGradient, {
   flex: 1,
@@ -64,6 +66,15 @@ const ForgotPasswordText = styled(Text, {
 });
 
 export default function SignIn() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const { signIn, isLogging } = useAuth();
+
+  const handleSignIn = () => {
+    signIn(email, password);
+  };
+
   return (
     <Container
       colors={[
@@ -85,17 +96,25 @@ export default function SignIn() {
             placeholder="E-mail"
             autoCorrect={false}
             autoCapitalize="none"
+            onChangeText={setEmail}
           />
           <Input
             variant="secondary"
             placeholder="Password"
             autoCorrect={false}
             autoCapitalize="none"
+            onChangeText={setPassword}
+            secureTextEntry
           />
           <ForgotPasswordButton>
             <ForgotPasswordText>Forgot password?</ForgotPasswordText>
           </ForgotPasswordButton>
-          <Button title="Sign in" variant="primary" />
+          <Button
+            title="Sign in"
+            variant="primary"
+            onPress={handleSignIn}
+            loading={isLogging}
+          />
         </Content>
       </KeyboardAvoidingView>
     </Container>
