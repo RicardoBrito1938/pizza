@@ -69,7 +69,9 @@ export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const { signIn, isLogging } = useAuth();
+  const { signIn, isLogging, user } = useAuth();
+
+  console.log(user);
 
   const handleSignIn = () => {
     signIn(email, password);
