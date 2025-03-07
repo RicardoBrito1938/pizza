@@ -69,9 +69,7 @@ export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const { signIn, isLogging, user } = useAuth();
-
-  console.log(user);
+  const { signIn, isLogging, forgotPassword } = useAuth();
 
   const handleSignIn = () => {
     signIn(email, password);
@@ -108,7 +106,7 @@ export default function SignIn() {
             onChangeText={setPassword}
             secureTextEntry
           />
-          <ForgotPasswordButton>
+          <ForgotPasswordButton onPress={() => forgotPassword(email)}>
             <ForgotPasswordText>Forgot password?</ForgotPasswordText>
           </ForgotPasswordButton>
           <Button

@@ -5,7 +5,11 @@ import {
   useEffect,
   type PropsWithChildren,
 } from "react";
-import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+} from "firebase/auth";
 import { Alert } from "react-native";
 import { auth, db } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
@@ -22,7 +26,8 @@ type AuthContextData = {
   signOut: () => void;
   isLogging: boolean;
   user: User | null;
-  isLoadingUser: boolean; // Add this to indicate the initial loading state
+  isLoadingUser: boolean;
+  forgotPassword: (email: string) => void;
 };
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
@@ -80,7 +85,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       setIsLogging(true);
 
       await signInWithEmailAndPassword(auth, email, password);
-      // No need to manually set user here as the onAuthStateChanged listener will handle it
     } catch (error: any) {
       const errorMessage = error.message || "Authentication failed";
       Alert.alert("Login Error", errorMessage);
@@ -96,6 +100,21 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     } catch (error: any) {
       const errorMessage = error.message || "Sign out failed";
       Alert.alert("Sign Out Error", errorMessage);
+    }
+  };
+
+  const forgotPassword = async (email: string) => {
+    if (!email) {
+      Alert.alert("Forgot Password", "Email is required");
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      Alert.alert("Forgot Password", "Password reset email sent");
+    } catch (error: any) {
+      const errorMessage = error.message || "Password reset failed";
+      Alert.alert("Forgot Password", errorMessage);
     }
   };
 
@@ -119,6 +138,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
         isLogging,
         user,
         isLoadingUser,
+        forgotPassword,
       }}
     >
       {children}
