@@ -38,43 +38,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const router = useRouter();
 
-  // Listen to authentication state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        // User is signed in
-        try {
-          const docRef = doc(db, "users", firebaseUser.uid);
-          const docSnap = await getDoc(docRef);
-
-          if (docSnap.exists()) {
-            const userData = docSnap.data();
-
-            setUser({
-              id: firebaseUser.uid,
-              email: firebaseUser.email,
-              isAdmin: !!userData?.isAdmin,
-            });
-          } else {
-            setUser({
-              id: firebaseUser.uid,
-              email: firebaseUser.email,
-              isAdmin: false,
-            });
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        }
-      } else {
-        setUser(null);
-      }
-
-      setIsLoadingUser(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
   const signIn = async (email: string, password: string) => {
     if (!email || !password) {
       Alert.alert("Login Error", "Email and password are required");
@@ -118,9 +81,46 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     }
   };
 
+  // Listen to authentication state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // User is signed in
+        try {
+          const docRef = doc(db, "users", firebaseUser.uid);
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            const userData = docSnap.data();
+
+            setUser({
+              id: firebaseUser.uid,
+              email: firebaseUser.email,
+              isAdmin: !!userData?.isAdmin,
+            });
+          } else {
+            setUser({
+              id: firebaseUser.uid,
+              email: firebaseUser.email,
+              isAdmin: false,
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      } else {
+        setUser(null);
+      }
+
+      setIsLoadingUser(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   useEffect(() => {
     if (user && !isLoadingUser) {
-      router.replace("/home");
+      router.replace("/product");
       SplashScreen.hideAsync();
     }
 
