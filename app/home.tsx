@@ -2,11 +2,22 @@ import { useAuth } from "@/hooks/auth";
 import extendedTheme from "@/styles/extendedTheme";
 import { styled } from "@fast-styles/react";
 import { LinearGradient } from "expo-linear-gradient";
-import { Image, Pressable, Text, View } from "react-native";
+import { Alert, FlatList, Image, Pressable, Text, View } from "react-native";
 import { getStatusBarHeight } from "react-native-iphone-x-helper";
 import happyEmoji from "@/assets/images/happy.png";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Search } from "@/components/ui/search";
+import { ProductCard, type ProductProps } from "@/components/ui/product-card";
+import { db } from "@/firebaseConfig";
+import {
+  collection,
+  query,
+  orderBy,
+  getDocs,
+  startAt,
+  endAt,
+} from "firebase/firestore";
+import { useEffect, useState } from "react";
 
 const Container = styled(View, {
   flex: 1,
@@ -40,8 +51,60 @@ const GreetingText = styled(Text, {
   fontFamily: extendedTheme.fonts.$titleFont,
 });
 
+const MenuHeader = styled(View, {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  margin: 24,
+  marginBottom: 0,
+  paddingBottom: 22,
+  borderBottomWidth: 1,
+  borderBottomColor: extendedTheme.colors.$shape,
+});
+
+const MenuItemNumber = styled(Text, {
+  fontSize: 14,
+  color: extendedTheme.colors.$secondary900,
+  fontFamily: extendedTheme.fonts.$textFont,
+});
+
+const Title = styled(Text, {
+  fontSize: 20,
+  lineHeight: 24,
+  color: extendedTheme.colors.$secondary900,
+  fontFamily: extendedTheme.fonts.$titleFont,
+});
+
 export default function Home() {
   const { signOut } = useAuth();
+  const [pizzas, setPizzas] = useState<ProductProps[]>([]);
+
+  useEffect(() => {
+    const fetchPizzas = async (value: string) => {
+      const formattedValue = value.trim().toLowerCase();
+
+      try {
+        const pizzasRef = collection(db, "pizzas");
+        const q = query(
+          pizzasRef,
+          orderBy("name_insensitive"),
+          startAt(formattedValue),
+          endAt(`${formattedValue}\uf8ff`)
+        );
+
+        const querySnapshot = await getDocs(q);
+        const pizzas = querySnapshot.docs.map((doc) => {
+          return { id: doc.id, ...doc.data() };
+        }) as ProductProps[];
+
+        setPizzas(pizzas);
+      } catch {
+        Alert.alert("Error", "An error occurred while fetching pizzas");
+      }
+    };
+
+    fetchPizzas("");
+  }, []);
 
   return (
     <Container>
@@ -72,6 +135,23 @@ export default function Home() {
         </Pressable>
       </Header>
       <Search onSearch={() => {}} onClear={() => {}} />
+
+      <MenuHeader>
+        <Title>Menu</Title>
+        <MenuItemNumber>3 pizzas</MenuItemNumber>
+      </MenuHeader>
+
+      <FlatList
+        data={pizzas}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => <ProductCard data={item} />}
+        contentContainerStyle={{
+          marginHorizontal: 24,
+          paddingTop: 20,
+          paddingBottom: 125,
+        }}
+      />
     </Container>
   );
 }

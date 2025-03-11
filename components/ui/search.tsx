@@ -2,7 +2,12 @@ import extendedTheme from "@/styles/extendedTheme";
 import { Feather } from "@expo/vector-icons";
 import { styled } from "@fast-styles/react";
 import type { WithStyles } from "@fast-styles/react/lib/typescript/types";
-import { Pressable, TextInput, type TextInputProps, View } from "react-native";
+import {
+  TextInput,
+  type TextInputProps,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const Container = styled(View, {
   width: "100%",
@@ -28,11 +33,11 @@ const Input = styled(TextInput, {
   fontFamily: extendedTheme.fonts.$textFont,
 });
 
-export const Clear = styled(Pressable, {
+const Clear = styled(TouchableOpacity, {
   marginRight: 7,
 });
 
-export const Button = styled(Pressable, {
+const Button = styled(TouchableOpacity, {
   height: 52,
   width: 52,
   borderRadius: 16,
