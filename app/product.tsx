@@ -17,6 +17,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { InputPrice } from "@/components/ui/input-price";
 import { Input } from "@/components/ui/input";
+import { getFirestore, collection, addDoc } from "firebase/firestore";
 
 const Container = styled(KeyboardAvoidingView, {
   flex: 1,
@@ -89,6 +90,15 @@ const MaxCharacters = styled(Text, {
 
 export default function Product() {
   const [image, setImage] = useState<string | null>(null);
+  const [name, setName] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [priceSizeP, setPriceSizeP] = useState<string>("");
+  const [priceSizeM, setPriceSizeM] = useState<string>("");
+  const [priceSizeG, setPriceSizeG] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const db = getFirestore();
+
   const handleImagePick = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -108,6 +118,54 @@ export default function Product() {
       setImage(result.assets[0].uri);
     }
   };
+
+  const handleAddPizza = async () => {
+    if (
+      !image ||
+      !name.trim() ||
+      !description.trim() ||
+      !priceSizeP ||
+      !priceSizeM ||
+      !priceSizeG
+    ) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    setLoading(true);
+    //TODO: I am not paying for firebase storage
+    // const fileName = new Date().getTime();
+    // const reference = storage().ref(`pizzas/${fileName}.png`);
+
+    // await reference.putFile(image);
+    // const url = await reference.getDownloadURL();
+    const url = "https://avatars.githubusercontent.com/u/51454097?v=4";
+    const mockReference = {
+      fullPath: "https://avatars.githubusercontent.com/u/51454097?v=4",
+    };
+
+    try {
+      await addDoc(collection(db, "pizzas"), {
+        image: url,
+        name,
+        name_insensitive: name.toLowerCase().trim(),
+        description,
+        price_sizes: {
+          S: priceSizeP,
+          M: priceSizeM,
+          L: priceSizeG,
+        },
+        photo_url: url,
+        photo_path: mockReference.fullPath,
+      });
+      alert("Pizza registered successfully!");
+    } catch {
+      alert("Error registering pizza");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Container behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -136,7 +194,7 @@ export default function Product() {
         <Form>
           <InputGroup>
             <Label>Name</Label>
-            <Input />
+            <Input value={name} onChangeText={setName} />
           </InputGroup>
 
           <InputGroup>
@@ -145,17 +203,40 @@ export default function Product() {
               <MaxCharacters>0 to 60 characters</MaxCharacters>
             </InputGroupHeader>
 
-            <Input multiline maxLength={60} style={{ height: 80 }} />
+            <Input
+              multiline
+              maxLength={60}
+              style={{ height: 80 }}
+              value={description}
+              onChangeText={setDescription}
+            />
           </InputGroup>
 
           <InputGroup>
             <Label>Sizes and prices</Label>
-            <InputPrice size="S" />
-            <InputPrice size="M" />
-            <InputPrice size="L" />
+            <InputPrice
+              size="S"
+              value={priceSizeP}
+              onChangeText={setPriceSizeP}
+            />
+            <InputPrice
+              size="M"
+              value={priceSizeM}
+              onChangeText={setPriceSizeM}
+            />
+            <InputPrice
+              size="L"
+              value={priceSizeG}
+              onChangeText={setPriceSizeG}
+            />
           </InputGroup>
 
-          <Button title="Register pizza" variant="secondary" />
+          <Button
+            title="Register pizza"
+            variant="secondary"
+            loading={loading}
+            onPress={handleAddPizza}
+          />
         </Form>
       </ScrollView>
     </Container>
