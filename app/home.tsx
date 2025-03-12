@@ -9,6 +9,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Search } from "@/components/ui/search";
 import { ProductCard, type ProductProps } from "@/components/ui/product-card";
 import { db } from "@/firebaseConfig";
+import { useRouter } from "expo-router";
 import {
   collection,
   query,
@@ -17,7 +18,7 @@ import {
   startAt,
   endAt,
 } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const Container = styled(View, {
   flex: 1,
@@ -77,34 +78,49 @@ const Title = styled(Text, {
 
 export default function Home() {
   const { signOut } = useAuth();
+  const routes = useRouter();
   const [pizzas, setPizzas] = useState<ProductProps[]>([]);
+  const [searchValue, setSearchValue] = useState("");
+
+  const fetchPizzas = useCallback(async (value: string) => {
+    const formattedValue = value.trim().toLowerCase();
+
+    try {
+      const pizzasRef = collection(db, "pizzas");
+      const q = query(
+        pizzasRef,
+        orderBy("name_insensitive"),
+        startAt(formattedValue),
+        endAt(`${formattedValue}\uf8ff`)
+      );
+
+      const querySnapshot = await getDocs(q);
+      const pizzas = querySnapshot.docs.map((doc) => {
+        return { id: doc.id, ...doc.data() };
+      }) as ProductProps[];
+
+      setPizzas(pizzas);
+    } catch {
+      Alert.alert("Error", "An error occurred while fetching pizzas");
+    }
+  }, []);
+
+  const handleSearch = () => {
+    fetchPizzas(searchValue);
+  };
+
+  const handleClear = () => {
+    setSearchValue("");
+    fetchPizzas("");
+  };
+
+  const handleOpenProduct = (id: string) => {
+    routes.push(`/product/${id}`);
+  };
 
   useEffect(() => {
-    const fetchPizzas = async (value: string) => {
-      const formattedValue = value.trim().toLowerCase();
-
-      try {
-        const pizzasRef = collection(db, "pizzas");
-        const q = query(
-          pizzasRef,
-          orderBy("name_insensitive"),
-          startAt(formattedValue),
-          endAt(`${formattedValue}\uf8ff`)
-        );
-
-        const querySnapshot = await getDocs(q);
-        const pizzas = querySnapshot.docs.map((doc) => {
-          return { id: doc.id, ...doc.data() };
-        }) as ProductProps[];
-
-        setPizzas(pizzas);
-      } catch {
-        Alert.alert("Error", "An error occurred while fetching pizzas");
-      }
-    };
-
     fetchPizzas("");
-  }, []);
+  }, [fetchPizzas]);
 
   return (
     <Container>
@@ -134,7 +150,12 @@ export default function Home() {
           />
         </Pressable>
       </Header>
-      <Search onSearch={() => {}} onClear={() => {}} />
+      <Search
+        onChangeText={setSearchValue}
+        value={searchValue}
+        onSearch={handleSearch}
+        onClear={handleClear}
+      />
 
       <MenuHeader>
         <Title>Menu</Title>
@@ -145,7 +166,9 @@ export default function Home() {
         data={pizzas}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => <ProductCard data={item} />}
+        renderItem={({ item }) => (
+          <ProductCard data={item} onPress={() => handleOpenProduct(item.id)} />
+        )}
         contentContainerStyle={{
           marginHorizontal: 24,
           paddingTop: 20,

@@ -1,6 +1,7 @@
 import extendedTheme from "@/styles/extendedTheme";
 import { Feather } from "@expo/vector-icons";
 import { styled } from "@fast-styles/react";
+import type { WithStyles } from "@fast-styles/react/lib/typescript/types";
 import {
   Image as RNImage,
   Pressable,
@@ -59,14 +60,14 @@ const Line = styled(View, {
   marginLeft: 124,
 });
 
-export type ProductProps = PressableProps & {
+export type ProductProps = {
   id: string;
   photo_url: string;
   name: string;
   description: string;
 };
 
-type Props = {
+type Props = WithStyles<PressableProps> & {
   data: ProductProps;
 };
 

@@ -5,6 +5,7 @@ import extendedTheme from "@/styles/extendedTheme";
 import { styled } from "@fast-styles/react";
 import { LinearGradient } from "expo-linear-gradient";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -14,10 +15,21 @@ import {
 } from "react-native";
 import { getStatusBarHeight } from "react-native-iphone-x-helper";
 import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { InputPrice } from "@/components/ui/input-price";
 import { Input } from "@/components/ui/input";
-import { getFirestore, collection, addDoc } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+} from "firebase/firestore";
+import { useLocalSearchParams } from "expo-router";
+import { db } from "@/firebaseConfig";
 
 const Container = styled(KeyboardAvoidingView, {
   flex: 1,
@@ -89,6 +101,8 @@ const MaxCharacters = styled(Text, {
 });
 
 export default function Product() {
+  const { id } = useLocalSearchParams();
+
   const [image, setImage] = useState<string | null>(null);
   const [name, setName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
@@ -96,8 +110,6 @@ export default function Product() {
   const [priceSizeM, setPriceSizeM] = useState<string>("");
   const [priceSizeG, setPriceSizeG] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-
-  const db = getFirestore();
 
   const handleImagePick = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -165,6 +177,30 @@ export default function Product() {
       setLoading(false);
     }
   };
+
+  const fetchPizza = useCallback(async (id: string) => {
+    if (!id) return;
+
+    const pizzaDocRef = doc(db, "pizzas", id);
+    const pizzaDocSnap = await getDoc(pizzaDocRef);
+
+    if (pizzaDocSnap.exists()) {
+      return pizzaDocSnap.data(); // Return pizza data
+    }
+
+    Alert.alert("Error", "Pizza not found");
+    return null;
+  }, []);
+
+  useEffect(() => {
+    if (typeof id !== "string") return;
+
+    fetchPizza(id).then((pizzaData) => {
+      if (pizzaData) {
+        console.log("Pizza data:", pizzaData);
+      }
+    });
+  }, [id, fetchPizza]);
 
   return (
     <Container behavior={Platform.OS === "ios" ? "padding" : "height"}>
