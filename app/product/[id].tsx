@@ -91,6 +91,10 @@ const MaxCharacters = styled(Text, {
 	fontFamily: extendedTheme.fonts.$textFont,
 })
 
+const GhostView = styled(View, {
+	width: 80,
+})
+
 export default function Product() {
 	const { id } = useLocalSearchParams()
 
@@ -184,19 +188,21 @@ export default function Product() {
 	}, [])
 
 	useEffect(() => {
-		if (typeof id !== 'string') return
+		if (!id) return // No ID means we're creating a new product
 
-		fetchPizza(id).then((pizzaData) => {
-			if (pizzaData) {
-				setName(pizzaData.name)
-				setDescription(pizzaData.description)
-				setImage(pizzaData.photo_url)
-				setImagePath(pizzaData.photo_path)
-				setPriceSizeP(pizzaData.price_sizes?.S)
-				setPriceSizeM(pizzaData.price_sizes?.M)
-				setPriceSizeG(pizzaData.price_sizes?.L)
-			}
-		})
+		if (typeof id === 'string') {
+			fetchPizza(id).then((pizzaData) => {
+				if (pizzaData) {
+					setName(pizzaData.name)
+					setDescription(pizzaData.description)
+					setImage(pizzaData.photo_url)
+					setImagePath(pizzaData.photo_path)
+					setPriceSizeP(pizzaData.price_sizes?.S)
+					setPriceSizeM(pizzaData.price_sizes?.M)
+					setPriceSizeG(pizzaData.price_sizes?.L)
+				}
+			})
+		}
 	}, [id, fetchPizza])
 
 	return (
@@ -210,18 +216,24 @@ export default function Product() {
 				>
 					<ButtonBack />
 					<Title>Register</Title>
-					<TouchableOpacity>
-						<DeleteLabel>Delete</DeleteLabel>
-					</TouchableOpacity>
+					{id ? (
+						<TouchableOpacity>
+							<DeleteLabel>Delete</DeleteLabel>
+						</TouchableOpacity>
+					) : (
+						<GhostView />
+					)}
 				</Header>
 
 				<Upload>
 					<Photo uri={image} />
-					<PickImageButton
-						title='Pick'
-						variant='primary'
-						onPress={handleImagePick}
-					/>
+					{!id && (
+						<PickImageButton
+							title='Pick'
+							variant='primary'
+							onPress={handleImagePick}
+						/>
+					)}
 				</Upload>
 
 				<Form>
@@ -264,12 +276,14 @@ export default function Product() {
 						/>
 					</InputGroup>
 
-					<Button
-						title='Register pizza'
-						variant='secondary'
-						loading={loading}
-						onPress={handleAddPizza}
-					/>
+					{!id && (
+						<Button
+							title='Register pizza'
+							variant='secondary'
+							loading={loading}
+							onPress={handleAddPizza}
+						/>
+					)}
 				</Form>
 			</ScrollView>
 		</Container>
