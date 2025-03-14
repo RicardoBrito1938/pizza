@@ -170,7 +170,7 @@ export default function Home() {
 
 			<MenuHeader>
 				<Title>Menu</Title>
-				<MenuItemNumber>3 pizzas</MenuItemNumber>
+				<MenuItemNumber>{pizzas.length} pizzas</MenuItemNumber>
 			</MenuHeader>
 
 			<Body>
