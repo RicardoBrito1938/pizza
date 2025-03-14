@@ -18,9 +18,10 @@ import * as ImagePicker from 'expo-image-picker'
 import { useCallback, useEffect, useState } from 'react'
 import { InputPrice } from '@/components/ui/input-price'
 import { Input } from '@/components/ui/input'
-import { collection, addDoc, doc, getDoc } from 'firebase/firestore'
-import { useLocalSearchParams } from 'expo-router'
+import { collection, addDoc, doc, getDoc, deleteDoc } from 'firebase/firestore'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { db } from '@/firebaseConfig'
+import { getStorage, ref, deleteObject } from 'firebase/storage'
 
 const Container = styled(KeyboardAvoidingView, {
 	flex: 1,
@@ -92,11 +93,12 @@ const MaxCharacters = styled(Text, {
 })
 
 const GhostView = styled(View, {
-	width: 80,
+	width: 20,
 })
 
 export default function Product() {
 	const { id } = useLocalSearchParams()
+	const router = useRouter()
 
 	const [image, setImage] = useState<string | null>(null)
 	const [imagePath, setImagePath] = useState<string | null>(null)
@@ -166,6 +168,7 @@ export default function Product() {
 				photo_path: mockReference.fullPath,
 			})
 			alert('Pizza registered successfully!')
+			router.back()
 		} catch {
 			alert('Error registering pizza')
 		} finally {
@@ -173,10 +176,31 @@ export default function Product() {
 		}
 	}
 
-	const fetchPizza = useCallback(async (id: string) => {
+	const handleDeletePizza = async () => {
 		if (!id) return
 
-		const pizzaDocRef = doc(db, 'pizzas', id)
+		try {
+			// Delete the pizza document
+			const pizzaDocRef = doc(db, 'pizzas', id.toString())
+			await deleteDoc(pizzaDocRef)
+
+			// TODO: Delete the image from Firebase Storage if applicable
+			// Uncomment the following lines if you are using Firebase Storage
+			// const storage = getStorage()
+			// const imageRef = ref(storage, imagePath)
+			// await deleteObject(imageRef)
+
+			alert('Pizza deleted successfully!')
+			router.back()
+		} catch (error) {
+			alert('Error deleting pizza')
+		}
+	}
+
+	const fetchPizza = useCallback(async () => {
+		if (!id) return
+
+		const pizzaDocRef = doc(db, 'pizzas', id.toString())
 		const pizzaDocSnap = await getDoc(pizzaDocRef)
 
 		if (pizzaDocSnap.exists()) {
@@ -185,24 +209,22 @@ export default function Product() {
 
 		Alert.alert('Error', 'Pizza not found')
 		return null
-	}, [])
+	}, [id])
 
 	useEffect(() => {
 		if (!id) return // No ID means we're creating a new product
 
-		if (typeof id === 'string') {
-			fetchPizza(id).then((pizzaData) => {
-				if (pizzaData) {
-					setName(pizzaData.name)
-					setDescription(pizzaData.description)
-					setImage(pizzaData.photo_url)
-					setImagePath(pizzaData.photo_path)
-					setPriceSizeP(pizzaData.price_sizes?.S)
-					setPriceSizeM(pizzaData.price_sizes?.M)
-					setPriceSizeG(pizzaData.price_sizes?.L)
-				}
-			})
-		}
+		fetchPizza().then((pizzaData) => {
+			if (pizzaData) {
+				setName(pizzaData.name)
+				setDescription(pizzaData.description)
+				setImage(pizzaData.photo_url)
+				setImagePath(pizzaData.photo_path)
+				setPriceSizeP(pizzaData.price_sizes?.S)
+				setPriceSizeM(pizzaData.price_sizes?.M)
+				setPriceSizeG(pizzaData.price_sizes?.L)
+			}
+		})
 	}, [id, fetchPizza])
 
 	return (
@@ -217,7 +239,7 @@ export default function Product() {
 					<ButtonBack />
 					<Title>Register</Title>
 					{id ? (
-						<TouchableOpacity>
+						<TouchableOpacity onPress={handleDeletePizza}>
 							<DeleteLabel>Delete</DeleteLabel>
 						</TouchableOpacity>
 					) : (
