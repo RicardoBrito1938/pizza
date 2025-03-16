@@ -1,8 +1,10 @@
 import { ButtonBack } from '@/components/ui/button-back'
 import { RadioButton } from '@/components/ui/radio-button'
 import extendedTheme from '@/styles/extendedTheme'
+import { PIZZA_TYPES } from '@/utils/pizza-types'
 import { styled } from '@fast-styles/react'
 import { LinearGradient } from 'expo-linear-gradient'
+import { useState } from 'react'
 import { Image, KeyboardAvoidingView, Platform, View } from 'react-native'
 import { getStatusBarHeight } from 'react-native-iphone-x-helper'
 
@@ -32,6 +34,7 @@ const Sizes = styled(View, {
 })
 
 export const Order = () => {
+	const [size, setSize] = useState('')
 	return (
 		<Container behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
 			<Header
@@ -44,7 +47,14 @@ export const Order = () => {
 			</Header>
 			<Photo source={{ uri: 'http://github.com/RicardoBrito1938.png' }} />
 			<Sizes>
-				<RadioButton title='Small' />
+				{PIZZA_TYPES.map((type) => (
+					<RadioButton
+						key={type.id}
+						title={type.name}
+						onPress={() => setSize(type.id)}
+						selected={size === type.id}
+					/>
+				))}
 			</Sizes>
 		</Container>
 	)
