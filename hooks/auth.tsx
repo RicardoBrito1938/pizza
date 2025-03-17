@@ -120,7 +120,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
 	useEffect(() => {
 		if (user && !isLoadingUser) {
-			router.replace('/order')
+			router.replace('/orders')
 			SplashScreen.hideAsync()
 		}
 
