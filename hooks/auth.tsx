@@ -1,151 +1,151 @@
 import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  type PropsWithChildren,
-} from "react";
+	createContext,
+	useContext,
+	useState,
+	useEffect,
+	type PropsWithChildren,
+} from 'react'
 import {
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  sendPasswordResetEmail,
-} from "firebase/auth";
-import { Alert } from "react-native";
-import { auth, db } from "../firebaseConfig";
-import { doc, getDoc } from "firebase/firestore";
-import { SplashScreen, useRouter } from "expo-router";
+	signInWithEmailAndPassword,
+	onAuthStateChanged,
+	sendPasswordResetEmail,
+} from 'firebase/auth'
+import { Alert } from 'react-native'
+import { auth, db } from '../firebaseConfig'
+import { doc, getDoc } from 'firebase/firestore'
+import { SplashScreen, useRouter } from 'expo-router'
 
 type User = {
-  id: string;
-  email: string | null;
-  isAdmin: boolean;
-};
+	id: string
+	email: string | null
+	isAdmin: boolean
+}
 
 type AuthContextData = {
-  signIn: (email: string, password: string) => void;
-  signOut: () => void;
-  isLogging: boolean;
-  user: User | null;
-  isLoadingUser: boolean;
-  forgotPassword: (email: string) => void;
-};
+	signIn: (email: string, password: string) => void
+	signOut: () => void
+	isLogging: boolean
+	user: User | null
+	isLoadingUser: boolean
+	forgotPassword: (email: string) => void
+}
 
-const AuthContext = createContext<AuthContextData>({} as AuthContextData);
+const AuthContext = createContext<AuthContextData>({} as AuthContextData)
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
-  const [isLogging, setIsLogging] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
-  const router = useRouter();
+	const [isLogging, setIsLogging] = useState(false)
+	const [user, setUser] = useState<User | null>(null)
+	const [isLoadingUser, setIsLoadingUser] = useState(true)
+	const router = useRouter()
 
-  const signIn = async (email: string, password: string) => {
-    if (!email || !password) {
-      Alert.alert("Login Error", "Email and password are required");
-      return;
-    }
+	const signIn = async (email: string, password: string) => {
+		if (!email || !password) {
+			Alert.alert('Login Error', 'Email and password are required')
+			return
+		}
 
-    try {
-      setIsLogging(true);
+		try {
+			setIsLogging(true)
 
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error: any) {
-      const errorMessage = error.message || "Authentication failed";
-      Alert.alert("Login Error", errorMessage);
-    } finally {
-      setIsLogging(false);
-    }
-  };
+			await signInWithEmailAndPassword(auth, email, password)
+		} catch (error: any) {
+			const errorMessage = error.message || 'Authentication failed'
+			Alert.alert('Login Error', errorMessage)
+		} finally {
+			setIsLogging(false)
+		}
+	}
 
-  const signOut = async () => {
-    try {
-      await auth.signOut();
-      router.replace("/");
-    } catch (error: any) {
-      const errorMessage = error.message || "Sign out failed";
-      Alert.alert("Sign Out Error", errorMessage);
-    }
-  };
+	const signOut = async () => {
+		try {
+			await auth.signOut()
+			router.replace('/')
+		} catch (error: any) {
+			const errorMessage = error.message || 'Sign out failed'
+			Alert.alert('Sign Out Error', errorMessage)
+		}
+	}
 
-  const forgotPassword = async (email: string) => {
-    if (!email) {
-      Alert.alert("Forgot Password", "Email is required");
-      return;
-    }
+	const forgotPassword = async (email: string) => {
+		if (!email) {
+			Alert.alert('Forgot Password', 'Email is required')
+			return
+		}
 
-    try {
-      await sendPasswordResetEmail(auth, email);
-      Alert.alert("Forgot Password", "Password reset email sent");
-    } catch (error: any) {
-      const errorMessage = error.message || "Password reset failed";
-      Alert.alert("Forgot Password", errorMessage);
-    }
-  };
+		try {
+			await sendPasswordResetEmail(auth, email)
+			Alert.alert('Forgot Password', 'Password reset email sent')
+		} catch (error: any) {
+			const errorMessage = error.message || 'Password reset failed'
+			Alert.alert('Forgot Password', errorMessage)
+		}
+	}
 
-  // Listen to authentication state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        // User is signed in
-        try {
-          const docRef = doc(db, "users", firebaseUser.uid);
-          const docSnap = await getDoc(docRef);
+	// Listen to authentication state changes
+	useEffect(() => {
+		const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+			if (firebaseUser) {
+				// User is signed in
+				try {
+					const docRef = doc(db, 'users', firebaseUser.uid)
+					const docSnap = await getDoc(docRef)
 
-          if (docSnap.exists()) {
-            const userData = docSnap.data();
+					if (docSnap.exists()) {
+						const userData = docSnap.data()
 
-            setUser({
-              id: firebaseUser.uid,
-              email: firebaseUser.email,
-              isAdmin: !!userData?.isAdmin,
-            });
-          } else {
-            setUser({
-              id: firebaseUser.uid,
-              email: firebaseUser.email,
-              isAdmin: false,
-            });
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        }
-      } else {
-        setUser(null);
-      }
+						setUser({
+							id: firebaseUser.uid,
+							email: firebaseUser.email,
+							isAdmin: !!userData?.isAdmin,
+						})
+					} else {
+						setUser({
+							id: firebaseUser.uid,
+							email: firebaseUser.email,
+							isAdmin: false,
+						})
+					}
+				} catch (error) {
+					console.error('Error fetching user data:', error)
+				}
+			} else {
+				setUser(null)
+			}
 
-      setIsLoadingUser(false);
-    });
+			setIsLoadingUser(false)
+		})
 
-    return () => unsubscribe();
-  }, []);
+		return () => unsubscribe()
+	}, [])
 
-  useEffect(() => {
-    if (user && !isLoadingUser) {
-      router.replace("/home");
-      SplashScreen.hideAsync();
-    }
+	useEffect(() => {
+		if (user && !isLoadingUser) {
+			router.replace('/order')
+			SplashScreen.hideAsync()
+		}
 
-    if (!user && !isLoadingUser) {
-      router.replace("/");
-      SplashScreen.hideAsync();
-    }
-  }, [user, router, isLoadingUser]);
+		if (!user && !isLoadingUser) {
+			router.replace('/')
+			SplashScreen.hideAsync()
+		}
+	}, [user, router, isLoadingUser])
 
-  return (
-    <AuthContext.Provider
-      value={{
-        signOut,
-        signIn,
-        isLogging,
-        user,
-        isLoadingUser,
-        forgotPassword,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-};
+	return (
+		<AuthContext.Provider
+			value={{
+				signOut,
+				signIn,
+				isLogging,
+				user,
+				isLoadingUser,
+				forgotPassword,
+			}}
+		>
+			{children}
+		</AuthContext.Provider>
+	)
+}
 
 export const useAuth = () => {
-  return useContext(AuthContext);
-};
+	return useContext(AuthContext)
+}

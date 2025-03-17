@@ -38,7 +38,7 @@ const Photo = styled(Image, {
 const Sizes = styled(View, {
 	width: '100%',
 	flexDirection: 'row',
-	justifyContent: 'center',
+	justifyContent: 'space-between',
 	marginBottom: 40,
 })
 
@@ -46,6 +46,7 @@ const Form = styled(View, {
 	flex: 1,
 	padding: 24,
 	paddingBottom: 24,
+	top: -120,
 })
 
 const Title = styled(Text, {
@@ -92,7 +93,7 @@ const ContentScroll = styled(ScrollView, {
 	},
 })
 
-export const Order = () => {
+export default function Order() {
 	const [size, setSize] = useState('')
 	return (
 		<Container behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -128,7 +129,7 @@ export const Order = () => {
 
 						<InputGroup>
 							<Label>Quantity</Label>
-							<Input placeholder='Table Number' keyboardType='numeric' />
+							<Input placeholder='Quantity' keyboardType='numeric' />
 						</InputGroup>
 					</FormRow>
 
