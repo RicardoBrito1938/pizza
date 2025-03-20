@@ -1,8 +1,10 @@
 import { ButtonBack } from '@/components/ui/button-back'
+import { ItemSeparator } from '@/components/ui/item-separator'
+import { OrdersCard } from '@/components/ui/orders-card'
 import extendedTheme from '@/styles/extendedTheme'
 import { styled } from '@fast-styles/react'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Text, View } from 'react-native'
+import { FlatList, Text, View } from 'react-native'
 import { getStatusBarHeight } from 'react-native-iphone-x-helper'
 
 const Container = styled(View, {
@@ -34,6 +36,17 @@ export default function Orders() {
 			>
 				<Title>Orders</Title>
 			</Header>
+			<FlatList
+				data={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}
+				keyExtractor={(item) => item.toString()}
+				renderItem={({ item }) => <OrdersCard index={item} />}
+				numColumns={2}
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{
+					paddingBottom: 125,
+				}}
+				ItemSeparatorComponent={ItemSeparator}
+			/>
 		</Container>
 	)
 }
