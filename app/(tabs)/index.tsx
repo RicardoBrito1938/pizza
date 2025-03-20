@@ -1,88 +1,200 @@
-import { Image, StyleSheet, Platform, Text } from "react-native";
+import { useAuth } from '@/hooks/auth'
+import extendedTheme from '@/styles/extendedTheme'
+import { styled } from '@fast-styles/react'
+import { LinearGradient } from 'expo-linear-gradient'
+import { Alert, FlatList, Image, Pressable, Text, View } from 'react-native'
+import { getStatusBarHeight } from 'react-native-iphone-x-helper'
+import happyEmoji from '@/assets/images/happy.png'
+import { MaterialIcons } from '@expo/vector-icons'
+import { Search } from '@/components/ui/search'
+import { ProductCard, type ProductProps } from '@/components/ui/product-card'
+import { db } from '@/firebaseConfig'
+import { useRouter } from 'expo-router'
+import {
+	collection,
+	query,
+	orderBy,
+	getDocs,
+	startAt,
+	endAt,
+} from 'firebase/firestore'
+import { useCallback, useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
 
-import { HelloWave } from "@/components/HelloWave";
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { styled } from "@fast-styles/react";
-import extendedTheme from "@/styles/extendedTheme";
+const Container = styled(View, {
+	flex: 1,
+	backgroundColor: extendedTheme.colors.$background,
+})
 
-const StyledText = styled(Text, {
-  textAlign: "center",
-  width: extendedTheme.spacings.$20,
-  backgroundColor: extendedTheme.colors.$primary900,
-  color: extendedTheme.tokens.$textDefault,
-});
+const Header = styled(LinearGradient, {
+	width: '100%',
+	flexDirection: 'row',
+	justifyContent: 'space-between',
+	alignItems: 'center',
+	paddingTop: getStatusBarHeight() + 33,
+	paddingBottom: 58,
+	paddingHorizontal: 24,
+})
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <StyledText>Styled Text</StyledText>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit{" "}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>{" "}
-          to see changes. Press{" "}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: "cmd + d",
-              android: "cmd + m",
-              web: "F12",
-            })}
-          </ThemedText>{" "}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this
-          starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{" "}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText>{" "}
-          to get a fresh <ThemedText type="defaultSemiBold">app</ThemedText>{" "}
-          directory. This will move the current{" "}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+const Greeting = styled(View, {
+	flexDirection: 'row',
+	alignItems: 'center',
+})
+
+const GreetingEmoji = styled(Image, {
+	height: 32,
+	width: 32,
+	marginRight: 8,
+})
+
+const GreetingText = styled(Text, {
+	color: extendedTheme.colors.$title,
+	fontSize: 20,
+	fontFamily: extendedTheme.fonts.$titleFont,
+})
+
+const MenuHeader = styled(View, {
+	flexDirection: 'row',
+	justifyContent: 'space-between',
+	alignItems: 'center',
+	margin: 24,
+	marginBottom: 0,
+	paddingBottom: 22,
+	borderBottomWidth: 1,
+	borderBottomColor: extendedTheme.colors.$shape,
+})
+
+const MenuItemNumber = styled(Text, {
+	fontSize: 14,
+	color: extendedTheme.colors.$secondary900,
+	fontFamily: extendedTheme.fonts.$textFont,
+})
+
+const Title = styled(Text, {
+	fontSize: 20,
+	lineHeight: 24,
+	color: extendedTheme.colors.$secondary900,
+	fontFamily: extendedTheme.fonts.$titleFont,
+})
+
+const Body = styled(View, {
+	flex: 1,
+	paddingHorizontal: 24,
+	paddingBottom: 48,
+})
+
+export default function Home() {
+	const { signOut } = useAuth()
+	const routes = useRouter()
+	const [pizzas, setPizzas] = useState<ProductProps[]>([])
+	const [searchValue, setSearchValue] = useState('')
+
+	const fetchPizzas = useCallback(async (value: string) => {
+		const formattedValue = value.trim().toLowerCase()
+
+		try {
+			const pizzasRef = collection(db, 'pizzas')
+			const q = query(
+				pizzasRef,
+				orderBy('name_insensitive'),
+				startAt(formattedValue),
+				endAt(`${formattedValue}\uf8ff`),
+			)
+
+			const querySnapshot = await getDocs(q)
+			const pizzas = querySnapshot.docs.map((doc) => {
+				return { id: doc.id, ...doc.data() }
+			}) as ProductProps[]
+
+			setPizzas(pizzas)
+		} catch {
+			Alert.alert('Error', 'An error occurred while fetching pizzas')
+		}
+	}, [])
+
+	const handleSearch = () => {
+		fetchPizzas(searchValue)
+	}
+
+	const handleClear = () => {
+		setSearchValue('')
+		fetchPizzas('')
+	}
+
+	const handleOpenProduct = (id: string) => {
+		routes.push(`/product/${id}`)
+	}
+
+	const HandleAdd = () => {
+		routes.push('/product')
+	}
+
+	useEffect(() => {
+		fetchPizzas('')
+	}, [fetchPizzas])
+
+	return (
+		<Container>
+			<Header
+				colors={[
+					extendedTheme.tokens.$gradientStart,
+					extendedTheme.tokens.$gradientEnd,
+				]}
+			>
+				<Greeting>
+					<GreetingEmoji source={happyEmoji} />
+					<GreetingText>Hello, User</GreetingText>
+				</Greeting>
+				<Pressable
+					onPress={signOut}
+					style={({ pressed }) => [
+						{
+							opacity: pressed ? 0.7 : 1,
+							padding: 8,
+						},
+					]}
+				>
+					<MaterialIcons
+						name='logout'
+						size={24}
+						color={extendedTheme.colors.$title}
+					/>
+				</Pressable>
+			</Header>
+			<Search
+				onChangeText={setSearchValue}
+				value={searchValue}
+				onSearch={handleSearch}
+				onClear={handleClear}
+			/>
+
+			<MenuHeader>
+				<Title>Menu</Title>
+				<MenuItemNumber>{pizzas.length} pizzas</MenuItemNumber>
+			</MenuHeader>
+
+			<Body>
+				<FlatList
+					data={pizzas}
+					keyExtractor={(item) => item.id}
+					showsVerticalScrollIndicator={false}
+					renderItem={({ item }) => (
+						<ProductCard
+							data={item}
+							onPress={() => handleOpenProduct(item.id)}
+						/>
+					)}
+					contentContainerStyle={{
+						paddingTop: 20,
+					}}
+				/>
+
+				<Button
+					title='Register pizza'
+					variant='secondary'
+					onPress={HandleAdd}
+				/>
+			</Body>
+		</Container>
+	)
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-  },
-});
