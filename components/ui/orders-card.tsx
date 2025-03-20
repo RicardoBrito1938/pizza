@@ -28,7 +28,7 @@ const Container = styled(TouchableOpacity, {
 const StyledImage = styled(Image, {
 	width: 140,
 	height: 140,
-	borderRadius: 12,
+	borderRadius: 70,
 })
 
 const Name = styled(Text, {
@@ -81,6 +81,12 @@ const StatusLabel = styled(Text, {
 			preparing: {
 				color: extendedTheme.colors.$alert900,
 			},
+			prepared: {
+				color: extendedTheme.colors.$title,
+			},
+			delivered: {
+				color: extendedTheme.colors.$title,
+			},
 		},
 	},
 })
@@ -100,7 +106,7 @@ export const OrdersCard = ({ index, ...rest }: Props) => {
 			<Name>Margherita</Name>
 			<Description>Table 5 • Qnt: 1</Description>
 			<StatusContainer status='preparing'>
-				<StatusLabel status='preparing'>Preparing</StatusLabel>
+				<StatusLabel status='preparing'>preparing</StatusLabel>
 			</StatusContainer>
 		</Container>
 	)
