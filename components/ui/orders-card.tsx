@@ -93,20 +93,29 @@ const StatusLabel = styled(Text, {
 
 type Props = TouchableOpacityProps & {
 	index: number
+	data: {
+		pizza: string
+		size: string
+		quantity: number
+		amount: number
+		status: string
+		image: string
+		table_number: string
+	}
 }
 
-export const OrdersCard = ({ index, ...rest }: Props) => {
+export const OrdersCard = ({ index, data, ...rest }: Props) => {
 	const hasBorderRight = index % 2 === 0 ? 'true' : 'false'
 
 	return (
 		<Container borderRight={hasBorderRight} {...rest}>
-			<StyledImage
-				source={{ uri: 'https://github.com/RicardoBrito1938.png' }}
-			/>
-			<Name>Margherita</Name>
-			<Description>Table 5 • Qnt: 1</Description>
-			<StatusContainer status='preparing'>
-				<StatusLabel status='preparing'>preparing</StatusLabel>
+			<StyledImage source={{ uri: data.image }} />
+			<Name>{data.pizza}</Name>
+			<Description>
+				Table {data.table_number} • Qnt: {data.quantity}
+			</Description>
+			<StatusContainer status={data.status}>
+				<StatusLabel status={data.status}>{data.status}</StatusLabel>
 			</StatusContainer>
 		</Container>
 	)
