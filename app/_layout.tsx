@@ -2,15 +2,20 @@ import { useFonts } from 'expo-font'
 import { SplashScreen, Stack } from 'expo-router'
 import { DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display'
 import { DMSans_400Regular } from '@expo-google-fonts/dm-sans'
-
 import { AuthProvider } from '@/hooks/auth'
-// Prevent the splash screen from auto-hiding before asset loading is complete.
+
 SplashScreen.preventAutoHideAsync()
+
 export default function RootLayout() {
-	useFonts({
+	const [fontsLoaded] = useFonts({
 		DMSerifDisplay_400Regular,
 		DMSans_400Regular,
 	})
+
+	if (!fontsLoaded) {
+		return null
+	}
+
 	return (
 		<AuthProvider>
 			<Stack screenOptions={{ headerShown: false }}>

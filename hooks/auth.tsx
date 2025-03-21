@@ -120,16 +120,13 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 	}, [])
 
 	useEffect(() => {
-		if (user && !isLoadingUser && !isLogging) {
-			router.replace('/(tabs)')
+		if (!isLoadingUser && !isLogging) {
+			if (user) {
+				router.replace('/(tabs)')
+			} else {
+				router.replace('/(stack)')
+			}
 			SplashScreen.hideAsync()
-			return
-		}
-
-		if (!user && !isLoadingUser && !isLogging) {
-			router.replace('/(stack)')
-			SplashScreen.hideAsync()
-			return
 		}
 	}, [user, router, isLoadingUser, isLogging])
 
