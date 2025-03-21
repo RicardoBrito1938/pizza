@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 		try {
 			await auth.signOut()
 			// Use the absolute path to ensure we're going to the root
-			router.navigate('/(stack)')
+			router.navigate('/')
 		} catch (error: any) {
 			const errorMessage = error.message || 'Sign out failed'
 			Alert.alert('Sign Out Error', errorMessage)
@@ -120,12 +120,10 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 	}, [])
 
 	useEffect(() => {
-		if (!isLoadingUser && !isLogging) {
-			if (user) {
-				router.replace('/(tabs)')
-			} else {
-				router.replace('/(stack)')
-			}
+		if (user) {
+			router.replace('/(admin)/home')
+		}
+		if (user && !isLoadingUser && !isLogging) {
 			SplashScreen.hideAsync()
 		}
 	}, [user, router, isLoadingUser, isLogging])

@@ -9,7 +9,7 @@ import { MaterialIcons } from '@expo/vector-icons'
 import { Search } from '@/components/ui/search'
 import { ProductCard, type ProductProps } from '@/components/ui/product-card'
 import { db } from '@/firebaseConfig'
-import { useRouter } from 'expo-router'
+import { type Route, useRouter } from 'expo-router'
 import {
 	collection,
 	query,
@@ -84,7 +84,7 @@ const Body = styled(View, {
 })
 
 export default function Home() {
-	const { signOut } = useAuth()
+	const { signOut, user } = useAuth()
 	const routes = useRouter()
 	const [pizzas, setPizzas] = useState<ProductProps[]>([])
 	const [searchValue, setSearchValue] = useState('')
@@ -122,7 +122,8 @@ export default function Home() {
 	}
 
 	const handleOpenProduct = (id: string) => {
-		routes.push(`/product/${id}`)
+		const route = user?.isAdmin ? `/product/${id}` : '/order'
+		routes.push(route as Route)
 	}
 
 	const HandleAdd = () => {
@@ -189,11 +190,13 @@ export default function Home() {
 					}}
 				/>
 
-				<Button
-					title='Register pizza'
-					variant='secondary'
-					onPress={HandleAdd}
-				/>
+				{user?.isAdmin && (
+					<Button
+						title='Register pizza'
+						variant='secondary'
+						onPress={HandleAdd}
+					/>
+				)}
 			</Body>
 		</Container>
 	)
