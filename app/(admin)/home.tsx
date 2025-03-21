@@ -122,7 +122,7 @@ export default function Home() {
 	}
 
 	const handleOpenProduct = (id: string) => {
-		const route = user?.isAdmin ? `/product/${id}` : '/order'
+		const route = user?.isAdmin ? `/product/${id}` : `/order/${id}`
 		routes.push(route as Route)
 	}
 

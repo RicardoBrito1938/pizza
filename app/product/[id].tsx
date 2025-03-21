@@ -21,7 +21,6 @@ import { Input } from '@/components/ui/input'
 import { collection, addDoc, doc, getDoc, deleteDoc } from 'firebase/firestore'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { db } from '@/firebaseConfig'
-import { getStorage, ref, deleteObject } from 'firebase/storage'
 
 const Container = styled(KeyboardAvoidingView, {
 	flex: 1,
