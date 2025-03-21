@@ -14,6 +14,7 @@ import { Alert } from 'react-native'
 import { auth, db } from '../firebaseConfig'
 import { doc, getDoc } from 'firebase/firestore'
 import { SplashScreen, useRouter } from 'expo-router'
+import { FirebaseError } from 'firebase/app'
 
 type User = {
 	id: string
@@ -48,8 +49,9 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 			setIsLogging(true)
 
 			await signInWithEmailAndPassword(auth, email, password)
-		} catch (error: any) {
-			const errorMessage = error.message || 'Authentication failed'
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof FirebaseError ? error.message : 'Authentication failed'
 			Alert.alert('Login Error', errorMessage)
 		} finally {
 			setIsLogging(false)
@@ -61,8 +63,9 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 			await auth.signOut()
 			// Use the absolute path to ensure we're going to the root
 			router.navigate('/')
-		} catch (error: any) {
-			const errorMessage = error.message || 'Sign out failed'
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof FirebaseError ? error.message : 'Sign out failed'
 			Alert.alert('Sign Out Error', errorMessage)
 		}
 	}
@@ -76,8 +79,9 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 		try {
 			await sendPasswordResetEmail(auth, email)
 			Alert.alert('Forgot Password', 'Password reset email sent')
-		} catch (error: any) {
-			const errorMessage = error.message || 'Password reset failed'
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof FirebaseError ? error.message : 'Password reset failed'
 			Alert.alert('Forgot Password', errorMessage)
 		}
 	}
@@ -92,7 +96,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 					const docSnap = await getDoc(docRef)
 
 					if (docSnap.exists()) {
-						const userData = docSnap.data()
+						const userData = docSnap.data() as { isAdmin?: boolean }
 
 						setUser({
 							id: firebaseUser.uid,
