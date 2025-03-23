@@ -165,3 +165,24 @@ create policy "Allow authenticated users to read orders"
 on orders
 for select
 using (auth.uid() is not null);
+
+
+adfadfadsfadsf
+
+-- Enable RLS for the pizzas table
+ALTER TABLE pizzas ENABLE ROW LEVEL SECURITY;
+
+-- Create a policy to allow authenticated users to update rows
+CREATE POLICY "Allow authenticated users to update"
+ON pizzas
+FOR UPDATE
+USING (auth.role() = 'authenticated')
+WITH CHECK (auth.role() = 'authenticated');
+
+adfadsfad
+
+CREATE POLICY "Allow authenticated users to update orders"
+ON orders
+FOR UPDATE
+USING (auth.role() = 'authenticated')
+WITH CHECK (auth.role() = 'authenticated');

@@ -4,7 +4,7 @@ import extendedTheme from '@/styles/extendedTheme'
 import { styled } from '@fast-styles/react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Alert, FlatList, Text, View } from 'react-native'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/utils/supabase'
 import { getStatusBarHeight } from 'react-native-iphone-x-helper'
 
@@ -41,18 +41,39 @@ type Order = {
 export default function Orders() {
 	const [orders, setOrders] = useState<Order[]>([])
 
+	const fetchOrders = useCallback(async () => {
+		try {
+			const { data, error } = await supabase
+				.from('orders')
+				.select('*')
+				.order('status')
+
+			if (error) {
+				throw error
+			}
+
+			setOrders(data as Order[])
+		} catch (error) {
+			console.error('Error fetching orders:', error)
+		}
+	}, [])
+
 	const updateOrderStatus = async (id: string) => {
 		try {
 			const { error } = await supabase
 				.from('orders')
 				.update({ status: 'delivered' })
 				.eq('id', id)
+				.select()
 
 			if (error) {
 				throw error
 			}
+
+			Alert.alert('Update', 'Order status updated successfully!')
 		} catch (error) {
 			console.error('Error updating order status:', error)
+			Alert.alert('Error', 'An error occurred while updating the order status.')
 		}
 	}
 
@@ -70,43 +91,27 @@ export default function Orders() {
 	}
 
 	useEffect(() => {
-		const fetchOrders = async () => {
-			try {
-				const { data, error } = await supabase
-					.from('orders')
-					.select('*')
-					.order('status')
-
-				if (error) {
-					throw error
-				}
-
-				setOrders(data as Order[])
-			} catch (error) {
-				console.error('Error fetching orders:', error)
-			}
-		}
-
 		fetchOrders()
 
 		const subscription = supabase
 			.channel('orders')
 			.on(
 				'postgres_changes',
-				{ event: 'INSERT', schema: 'public', table: 'orders' },
+				{ event: '*', schema: 'public', table: 'orders' }, // Listen to all events
 				(payload) => {
-					setOrders((prevOrders) => [payload.new as Order, ...prevOrders])
-				},
-			)
-			.on(
-				'postgres_changes',
-				{ event: 'UPDATE', schema: 'public', table: 'orders' },
-				(payload) => {
-					setOrders((prevOrders) =>
-						prevOrders.map((order) =>
-							order.id === payload.new.id ? (payload.new as Order) : order,
-						),
-					)
+					if (payload.eventType === 'INSERT') {
+						setOrders((prevOrders) => [payload.new as Order, ...prevOrders])
+					} else if (payload.eventType === 'UPDATE') {
+						setOrders((prevOrders) =>
+							prevOrders.map((order) =>
+								order.id === payload.new.id ? (payload.new as Order) : order,
+							),
+						)
+					} else if (payload.eventType === 'DELETE') {
+						setOrders((prevOrders) =>
+							prevOrders.filter((order) => order.id !== payload.old.id),
+						)
+					}
 				},
 			)
 			.subscribe()
@@ -114,7 +119,7 @@ export default function Orders() {
 		return () => {
 			supabase.removeChannel(subscription)
 		}
-	}, [])
+	}, [fetchOrders])
 
 	return (
 		<Container>
