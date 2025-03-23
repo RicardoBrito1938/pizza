@@ -129,6 +129,9 @@ importers:
       '@biomejs/biome':
         specifier: 1.9.4
         version: 1.9.4
+      '@react-native/js-polyfills':
+        specifier: ^0.78.1
+        version: 0.78.1
       '@testing-library/jest-native':
         specifier: ^5.4.3
         version: 5.4.3(react-native@0.76.7(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.19)(react@18.3.1))(react-test-renderer@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1224,6 +1227,10 @@ packages:
 
   '@react-native/js-polyfills@0.76.7':
     resolution: {integrity: sha512-+iEikj6c6Zvrg1c3cYMeiPB+5nS8EaIC3jCtP6Muk3qc7c386IymEPM2xycIlfg04DPZvO3D4P2/vaO9/TCnUg==}
+    engines: {node: '>=18'}
+
+  '@react-native/js-polyfills@0.78.1':
+    resolution: {integrity: sha512-Ogcv4QOA1o3IyErrf/i4cDnP+nfNcIfGTgw6iNQyAPry1xjPOz4ziajskLpWG/3ADeneIZuyZppKB4A28rZSvg==}
     engines: {node: '>=18'}
 
   '@react-native/metro-babel-transformer@0.76.7':
@@ -6246,6 +6253,8 @@ snapshots:
   '@react-native/gradle-plugin@0.76.7': {}
 
   '@react-native/js-polyfills@0.76.7': {}
+
+  '@react-native/js-polyfills@0.78.1': {}
 
   '@react-native/metro-babel-transformer@0.76.7(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))':
     dependencies:

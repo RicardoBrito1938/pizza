@@ -1,15 +1,21 @@
 import '@testing-library/jest-native'
 import 'react-native-gesture-handler/jestSetup'
 
-// Mock error-guard that contains Flow types
+// Add this specific mock for the error-guard.js file
 jest.mock('@react-native/js-polyfills/error-guard', () => ({
+	// Provide the expected exports
+	__esModule: true,
+	default: {
+		setGlobalHandler: jest.fn(),
+		getGlobalHandler: jest.fn(),
+	},
 	ErrorUtils: {
 		setGlobalHandler: jest.fn(),
 		getGlobalHandler: jest.fn(),
 		reportError: jest.fn(),
+		reportFatalError: jest.fn(),
 	},
 }))
-
 jest.mock('i18next', () => ({
 	changeLanguage: jest.fn().mockResolvedValue({}),
 	t: jest.fn((key) => key),
