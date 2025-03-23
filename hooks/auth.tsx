@@ -178,10 +178,8 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 	}, [])
 
 	useEffect(() => {
-		if (user) {
-			router.replace('/(admin)/home')
-		}
 		if (user && !isLoadingUser && !isLogging) {
+			router.replace('/(admin)/home')
 			SplashScreen.hideAsync()
 		}
 	}, [user, router, isLoadingUser, isLogging])

@@ -7,7 +7,6 @@ import {
 	ScrollView,
 	Text,
 	View,
-	Alert,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import extendedTheme from '@/styles/extendedTheme'
@@ -17,7 +16,7 @@ import { getBottomSpace } from 'react-native-iphone-x-helper'
 import brandImg from '@/assets/images/brand.png'
 import { useAuth } from '@/hooks/auth'
 import { useState } from 'react'
-import { useRouter } from 'expo-router'
+import { SplashScreen, useRouter } from 'expo-router'
 
 const Container = styled(LinearGradient, {
 	flex: 1,
@@ -80,6 +79,8 @@ const SignUpText = styled(Text, {
 	textAlign: 'center',
 	marginTop: 16,
 })
+
+SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
 	const [email, setEmail] = useState('')
