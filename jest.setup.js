@@ -1,7 +1,14 @@
 import '@testing-library/jest-native'
+import 'react-native-gesture-handler/jestSetup'
 
-// Add this mock for React Native JS polyfills
-jest.mock('@react-native/js-polyfills', () => ({}))
+// Mock error-guard that contains Flow types
+jest.mock('@react-native/js-polyfills/error-guard', () => ({
+	ErrorUtils: {
+		setGlobalHandler: jest.fn(),
+		getGlobalHandler: jest.fn(),
+		reportError: jest.fn(),
+	},
+}))
 
 jest.mock('i18next', () => ({
 	changeLanguage: jest.fn().mockResolvedValue({}),
@@ -104,4 +111,33 @@ jest.mock('expo-router', () => ({
 	useRouter: jest.fn(() => ({
 		push: jest.fn(),
 	})),
+}))
+
+// Mock the React Native modules that are not critical for tests
+jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper')
+
+// Mock any other native modules you're using
+jest.mock('react-native/Libraries/EventEmitter/NativeEventEmitter')
+
+// Fix the mock for @fast-styles/react to properly return a styled component
+jest.mock('@fast-styles/react', () => ({
+	styled: (Component) => {
+		// Return a forwarded component that passes props through
+		const ForwardedComponent = (props) => {
+			return <Component {...props} />
+		}
+		return ForwardedComponent
+	},
+}))
+
+// Mock the theme if needed
+jest.mock('@/styles/extendedTheme', () => ({
+	colors: {
+		$primary900: '#000',
+		$success900: '#000',
+		$title: '#fff',
+	},
+	fonts: {
+		$textFont: 'System',
+	},
 }))
