@@ -115,7 +115,10 @@ export default function Order() {
 	const [tableNumber, setTableNumber] = useState('0')
 	const [sendingOrder, setSendingOrder] = useState(false)
 
-	const amount = size ? (pizza?.price_sizes[size] ?? 0) * quantity : '0.00'
+	const amount =
+		size && pizza?.price_sizes && pizza.price_sizes[size]
+			? pizza.price_sizes[size] * quantity
+			: '0.00'
 
 	useEffect(() => {
 		const fetchPizza = async () => {
@@ -130,7 +133,17 @@ export default function Order() {
 					throw error
 				}
 
-				setPizza(data as PizzaResponse)
+				// Transform the fetched data to include a price_sizes object
+				const transformedData = {
+					...data,
+					price_sizes: {
+						S: data.price_size_s,
+						M: data.price_size_m,
+						L: data.price_size_l,
+					},
+				}
+
+				setPizza(transformedData as PizzaResponse)
 			} catch (error) {
 				Alert.alert('Error', 'An error occurred while fetching pizza')
 			}
