@@ -85,10 +85,13 @@ export default function Home() {
 		const formattedValue = value.trim().toLowerCase()
 
 		try {
-			const { data, error } = await supabase
-				.from('pizzas')
-				.select('*')
-				.ilike('name', `%${formattedValue}%`)
+			let query = supabase.from('pizzas').select('*')
+
+			if (formattedValue) {
+				query = query.ilike('name', `%${formattedValue}%`)
+			}
+
+			const { data, error } = await query
 
 			if (error) {
 				throw new Error(error.message)
@@ -119,8 +122,8 @@ export default function Home() {
 	}
 
 	useEffect(() => {
-		fetchPizzas('')
-	}, [fetchPizzas])
+		fetchPizzas(searchValue)
+	}, [searchValue, fetchPizzas])
 
 	return (
 		<Container>

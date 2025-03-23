@@ -91,34 +91,38 @@ export default function Orders() {
 	}
 
 	useEffect(() => {
-		fetchOrders()
+		const initializeOrders = async () => {
+			await fetchOrders() // Ensure orders are fetched before setting up the subscription
 
-		const subscription = supabase
-			.channel('orders')
-			.on(
-				'postgres_changes',
-				{ event: '*', schema: 'public', table: 'orders' }, // Listen to all events
-				(payload) => {
-					if (payload.eventType === 'INSERT') {
-						setOrders((prevOrders) => [payload.new as Order, ...prevOrders])
-					} else if (payload.eventType === 'UPDATE') {
-						setOrders((prevOrders) =>
-							prevOrders.map((order) =>
-								order.id === payload.new.id ? (payload.new as Order) : order,
-							),
-						)
-					} else if (payload.eventType === 'DELETE') {
-						setOrders((prevOrders) =>
-							prevOrders.filter((order) => order.id !== payload.old.id),
-						)
-					}
-				},
-			)
-			.subscribe()
+			const subscription = supabase
+				.channel('orders')
+				.on(
+					'postgres_changes',
+					{ event: '*', schema: 'public', table: 'orders' }, // Listen to all events
+					(payload) => {
+						if (payload.eventType === 'INSERT') {
+							setOrders((prevOrders) => [payload.new as Order, ...prevOrders])
+						} else if (payload.eventType === 'UPDATE') {
+							setOrders((prevOrders) =>
+								prevOrders.map((order) =>
+									order.id === payload.new.id ? (payload.new as Order) : order,
+								),
+							)
+						} else if (payload.eventType === 'DELETE') {
+							setOrders((prevOrders) =>
+								prevOrders.filter((order) => order.id !== payload.old.id),
+							)
+						}
+					},
+				)
+				.subscribe()
 
-		return () => {
-			supabase.removeChannel(subscription)
+			return () => {
+				supabase.removeChannel(subscription)
+			}
 		}
+
+		initializeOrders()
 	}, [fetchOrders])
 
 	return (

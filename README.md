@@ -186,3 +186,11 @@ ON orders
 FOR UPDATE
 USING (auth.role() = 'authenticated')
 WITH CHECK (auth.role() = 'authenticated');
+
+
+adfa
+-- Allow read access to all users
+CREATE POLICY "Allow read access to all" 
+ON public.pizzas
+FOR SELECT
+USING (true);
