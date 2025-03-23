@@ -4,6 +4,9 @@ import { Photo } from '@/components/ui/photo'
 import extendedTheme from '@/styles/extendedTheme'
 import { styled } from '@fast-styles/react'
 import { LinearGradient } from 'expo-linear-gradient'
+import * as FileSystem from 'expo-file-system'
+import * as mime from 'react-native-mime-types' // optional for getting mime type
+
 import {
 	Alert,
 	KeyboardAvoidingView,
@@ -18,9 +21,8 @@ import * as ImagePicker from 'expo-image-picker'
 import { useCallback, useEffect, useState } from 'react'
 import { InputPrice } from '@/components/ui/input-price'
 import { Input } from '@/components/ui/input'
-import { collection, addDoc, doc, getDoc, deleteDoc } from 'firebase/firestore'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { db } from '@/firebaseConfig'
+import { supabase } from '@/utils/supabase'
 
 const Container = styled(KeyboardAvoidingView, {
 	flex: 1,
@@ -142,72 +144,143 @@ export default function Product() {
 		}
 
 		setLoading(true)
-		//TODO: I am not paying for firebase storage
-		// const fileName = new Date().getTime();
-		// const reference = storage().ref(`pizzas/${fileName}.png`);
-
-		// await reference.putFile(image);
-		// const url = await reference.getDownloadURL();
-		const url = 'https://avatars.githubusercontent.com/u/51454097?v=4'
-		const mockReference = {
-			fullPath: 'https://avatars.githubusercontent.com/u/51454097?v=4',
-		}
 
 		try {
-			await addDoc(collection(db, 'pizzas'), {
+			const fileExt = image.split('.').pop()
+			const fileName = `${Date.now()}-${name.replace(/\s+/g, '-')}.${fileExt}`
+
+			const fileUri = image
+			const fileType = mime.lookup(fileUri) || 'image/jpeg'
+
+			const formData = new FormData()
+			formData.append('file', {
+				uri: fileUri,
+				name: fileName,
+				type: fileType,
+			} as any) // we cast to any to avoid React Native type issues
+
+			const { data, error } = await supabase.storage
+				.from('pizzas')
+				.upload(fileName, formData.get('file') as File, {
+					contentType: fileType,
+				})
+
+			if (error) {
+				console.error('Upload error:', error)
+				alert('Image upload failed.')
+				return
+			}
+
+			const { data: publicUrlData } = supabase.storage
+				.from('pizzas')
+				.getPublicUrl(fileName)
+
+			const photoUrl = publicUrlData.publicUrl
+
+			const { error: insertError } = await supabase.from('pizzas').insert({
 				name,
-				name_insensitive: name.toLowerCase().trim(),
 				description,
-				price_sizes: {
-					S: priceSizeP,
-					M: priceSizeM,
-					L: priceSizeG,
-				},
-				photo_url: url,
-				photo_path: mockReference.fullPath,
+				price_size_s: Number.parseFloat(priceSizeP),
+				price_size_m: Number.parseFloat(priceSizeM),
+				price_size_l: Number.parseFloat(priceSizeG),
+				photo_url: photoUrl,
+				photo_path: fileName,
 			})
-			alert('Pizza registered successfully!')
+
+			if (insertError) {
+				alert(`Error saving pizza: ${insertError.message}`)
+				return
+			}
+
+			alert('Pizza added successfully!')
 			router.back()
-		} catch {
-			alert('Error registering pizza')
+		} catch (error) {
+			console.error('Unexpected error:', error)
+			alert('Something went wrong.')
 		} finally {
 			setLoading(false)
 		}
 	}
 
 	const handleDeletePizza = async () => {
-		if (!id) return
+		if (!id) {
+			alert('Pizza ID is missing.')
+			return
+		}
+
+		setLoading(true)
 
 		try {
-			// Delete the pizza document
-			const pizzaDocRef = doc(db, 'pizzas', id.toString())
-			await deleteDoc(pizzaDocRef)
+			const { data: pizzaData, error: fetchError } = await supabase
+				.from('pizzas')
+				.select('photo_path')
+				.eq('id', id)
+				.single()
 
-			// TODO: Delete the image from Firebase Storage if applicable
-			// Uncomment the following lines if you are using Firebase Storage
-			// const storage = getStorage()
-			// const imageRef = ref(storage, imagePath)
-			// await deleteObject(imageRef)
+			if (fetchError || !pizzaData) {
+				throw new Error(fetchError?.message || 'Pizza not found.')
+			}
+
+			const photoPath = pizzaData.photo_path
+
+			if (photoPath) {
+				const { error: deleteImageError } = await supabase.storage
+					.from('pizzas')
+					.remove([photoPath])
+
+				if (deleteImageError) {
+					console.warn('Failed to delete image (continuing):', deleteImageError)
+				}
+			}
+
+			console.log('Trying to delete pizza with id:', id, typeof id)
+
+			const formattedId = String(id).trim()
+			console.log('Formatted ID used for deletion:', formattedId)
+
+			const {
+				error: deletePizzaError,
+				data,
+				status,
+			} = await supabase.from('pizzas').delete().eq('id', formattedId)
+
+			console.log('Delete status:', status)
+			console.log('Delete data:', data)
+			console.log('Delete error:', deletePizzaError)
+
+			if (deletePizzaError) {
+				throw new Error(`Failed to delete pizza: ${deletePizzaError.message}`)
+			}
 
 			alert('Pizza deleted successfully!')
 			router.back()
-		} catch (error) {
-			alert('Error deleting pizza')
+		} catch (error: any) {
+			console.error('Delete error:', error)
+			alert(error.message || 'Something went wrong.')
+		} finally {
+			setLoading(false)
 		}
 	}
 
 	const fetchPizza = useCallback(async () => {
 		if (!id) return
 
-		const pizzaDocRef = doc(db, 'pizzas', id.toString())
-		const pizzaDocSnap = await getDoc(pizzaDocRef)
+		try {
+			const { data: pizzaData, error } = await supabase
+				.from('pizzas')
+				.select('*')
+				.eq('id', id)
+				.single()
 
-		if (pizzaDocSnap.exists()) {
-			return pizzaDocSnap.data() // Return pizza data
+			if (error) {
+				throw new Error(error.message)
+			}
+
+			return pizzaData
+		} catch (error) {
+			Alert.alert('Error', `Pizza not found: ${error.message}`)
+			return null
 		}
-
-		Alert.alert('Error', 'Pizza not found')
-		return null
 	}, [id])
 
 	useEffect(() => {

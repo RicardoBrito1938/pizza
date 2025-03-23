@@ -5,16 +5,9 @@ import {
 	useEffect,
 	type PropsWithChildren,
 } from 'react'
-import {
-	signInWithEmailAndPassword,
-	onAuthStateChanged,
-	sendPasswordResetEmail,
-} from 'firebase/auth'
 import { Alert } from 'react-native'
-import { auth, db } from '../firebaseConfig'
-import { doc, getDoc } from 'firebase/firestore'
 import { SplashScreen, useRouter } from 'expo-router'
-import { FirebaseError } from 'firebase/app'
+import { supabase } from '@/utils/supabase'
 
 type User = {
 	id: string
@@ -29,6 +22,12 @@ type AuthContextData = {
 	user: User | null
 	isLoadingUser: boolean
 	forgotPassword: (email: string) => void
+	setUser: (user: User | null) => void
+	register: (
+		email: string,
+		password: string,
+		name?: string,
+	) => Promise<{ success: boolean; user?: User | null; error?: string }>
 }
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData)
@@ -40,34 +39,55 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 	const router = useRouter()
 
 	const signIn = async (email: string, password: string) => {
+		setIsLogging(true)
+
 		if (!email || !password) {
 			Alert.alert('Login Error', 'Email and password are required')
 			return
 		}
 
-		try {
-			setIsLogging(true)
+		const { data: authData, error: authError } =
+			await supabase.auth.signInWithPassword({
+				email,
+				password,
+			})
 
-			await signInWithEmailAndPassword(auth, email, password)
-		} catch (error: unknown) {
-			const errorMessage =
-				error instanceof FirebaseError ? error.message : 'Authentication failed'
-			Alert.alert('Login Error', errorMessage)
-		} finally {
+		if (authError) {
+			Alert.alert('Login Error', authError.message || 'Authentication failed')
 			setIsLogging(false)
+			return
 		}
+
+		const { data: profileData, error: profileError } = await supabase
+			.from('profiles')
+			.select('*')
+			.eq('id', authData.user.id)
+			.single()
+
+		if (profileError) {
+			Alert.alert(
+				'Login Error',
+				profileError.message || 'Authentication failed',
+			)
+			setIsLogging(false)
+			return
+		}
+
+		setUser({
+			id: authData.user.id,
+			email: authData.user.email || null,
+			isAdmin: profileData.is_admin,
+		})
+		setIsLogging(false)
 	}
 
 	const signOut = async () => {
-		try {
-			await auth.signOut()
-			// Use the absolute path to ensure we're going to the root
-			router.navigate('/')
-		} catch (error: unknown) {
-			const errorMessage =
-				error instanceof FirebaseError ? error.message : 'Sign out failed'
-			Alert.alert('Sign Out Error', errorMessage)
+		const { error } = await supabase.auth.signOut()
+		if (error) {
+			Alert.alert('Sign Out Error', error.message || 'Sign out failed')
+			return
 		}
+		router.navigate('/')
 	}
 
 	const forgotPassword = async (email: string) => {
@@ -76,51 +96,85 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 			return
 		}
 
-		try {
-			await sendPasswordResetEmail(auth, email)
-			Alert.alert('Forgot Password', 'Password reset email sent')
-		} catch (error: unknown) {
-			const errorMessage =
-				error instanceof FirebaseError ? error.message : 'Password reset failed'
-			Alert.alert('Forgot Password', errorMessage)
+		const { error } = await supabase.auth.resetPasswordForEmail(email)
+		if (error) {
+			Alert.alert('Forgot Password', error.message || 'Password reset failed')
+			return
 		}
+
+		Alert.alert('Forgot Password', 'Password reset email sent')
 	}
 
-	// Listen to authentication state changes
+	const register = async (
+		email: string,
+		password: string,
+		name = '',
+	): Promise<{ success: boolean; user?: User | null; error?: string }> => {
+		const { data, error } = await supabase.auth.signUp({
+			email,
+			password,
+		})
+
+		if (error) {
+			Alert.alert('Registration Error', error.message || 'Registration failed')
+			return { success: false, error: error.message }
+		}
+
+		const supabaseUser = data.user
+		if (supabaseUser) {
+			Alert.alert(
+				'Email Confirmation Required',
+				'A confirmation email has been sent to your email address. Please confirm your email to complete the registration process.',
+			)
+
+			// Map Supabase user to custom User type
+			const user: User = {
+				id: supabaseUser.id,
+				email: supabaseUser.email || null,
+				isAdmin: false,
+			}
+
+			return { success: true, user }
+		}
+
+		return { success: false, user: null }
+	}
+
 	useEffect(() => {
-		const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-			if (firebaseUser) {
-				// User is signed in
-				try {
-					const docRef = doc(db, 'users', firebaseUser.uid)
-					const docSnap = await getDoc(docRef)
+		const fetchSession = async () => {
+			const { data, error } = await supabase.auth.getSession()
+			if (error) {
+				console.error('Failed to fetch session:', error)
+				setUser(null)
+				setIsLoadingUser(false)
+				return
+			}
 
-					if (docSnap.exists()) {
-						const userData = docSnap.data() as { isAdmin?: boolean }
+			const session = data.session
+			if (session?.user) {
+				const { data: profileData, error: profileError } = await supabase
+					.from('profiles')
+					.select('*')
+					.eq('id', session.user.id)
+					.single()
 
-						setUser({
-							id: firebaseUser.uid,
-							email: firebaseUser.email,
-							isAdmin: !!userData?.isAdmin,
-						})
-					} else {
-						setUser({
-							id: firebaseUser.uid,
-							email: firebaseUser.email,
-							isAdmin: false,
-						})
-					}
-				} catch (error) {
-					console.error('Error fetching user data:', error)
+				if (profileError) {
+					console.error('Error fetching profile:', profileError)
+					setUser(null)
+				} else {
+					setUser({
+						id: session.user.id,
+						email: session.user.email || null,
+						isAdmin: profileData.is_admin,
+					})
 				}
 			} else {
 				setUser(null)
 			}
-
 			setIsLoadingUser(false)
-		})
+		}
 
-		return () => unsubscribe()
+		fetchSession()
 	}, [])
 
 	useEffect(() => {
@@ -137,8 +191,10 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 			value={{
 				signOut,
 				signIn,
+				register,
 				isLogging,
 				user,
+				setUser,
 				isLoadingUser,
 				forgotPassword,
 			}}

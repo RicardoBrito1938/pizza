@@ -6,6 +6,8 @@ import {
 	Pressable,
 	ScrollView,
 	Text,
+	View,
+	Alert,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import extendedTheme from '@/styles/extendedTheme'
@@ -65,14 +67,22 @@ const ForgotPasswordText = styled(Text, {
 	fontFamily: extendedTheme.fonts.$textFont,
 })
 
+const ButtonsContainer = styled(View, {
+	gap: 4,
+})
+
 export default function RootLayout() {
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
 
-	const { signIn, isLogging, forgotPassword } = useAuth()
+	const { signIn, isLogging, forgotPassword, register } = useAuth()
 
 	const handleSignIn = () => {
 		signIn(email, password)
+	}
+
+	const handleSignUp = async () => {
+		await register(email, password)
 	}
 
 	return (
@@ -109,12 +119,20 @@ export default function RootLayout() {
 					<ForgotPasswordButton onPress={() => forgotPassword(email)}>
 						<ForgotPasswordText>Forgot password?</ForgotPasswordText>
 					</ForgotPasswordButton>
-					<Button
-						title='Sign in'
-						variant='primary'
-						onPress={handleSignIn}
-						loading={isLogging}
-					/>
+					<ButtonsContainer>
+						<Button
+							title='Sign in'
+							variant='primary'
+							onPress={handleSignIn}
+							loading={isLogging}
+						/>
+						<Button
+							title='Sign Up'
+							variant='secondary'
+							onPress={handleSignUp}
+							loading={isLogging}
+						/>
+					</ButtonsContainer>
 				</Content>
 			</KeyboardAvoidingView>
 		</Container>

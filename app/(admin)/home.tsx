@@ -8,18 +8,10 @@ import happyEmoji from '@/assets/images/happy.png'
 import { MaterialIcons } from '@expo/vector-icons'
 import { Search } from '@/components/ui/search'
 import { ProductCard, type ProductProps } from '@/components/ui/product-card'
-import { db } from '@/firebaseConfig'
-import { type Route, useRouter } from 'expo-router'
-import {
-	collection,
-	query,
-	orderBy,
-	getDocs,
-	startAt,
-	endAt,
-} from 'firebase/firestore'
 import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { supabase } from '@/utils/supabase'
+import { type Route, useRouter } from 'expo-router'
 
 const Container = styled(View, {
 	flex: 1,
@@ -93,21 +85,17 @@ export default function Home() {
 		const formattedValue = value.trim().toLowerCase()
 
 		try {
-			const pizzasRef = collection(db, 'pizzas')
-			const q = query(
-				pizzasRef,
-				orderBy('name_insensitive'),
-				startAt(formattedValue),
-				endAt(`${formattedValue}\uf8ff`),
-			)
+			const { data, error } = await supabase
+				.from('pizzas')
+				.select('*')
+				.ilike('name', `%${formattedValue}%`)
 
-			const querySnapshot = await getDocs(q)
-			const pizzas = querySnapshot.docs.map((doc) => {
-				return { id: doc.id, ...doc.data() }
-			}) as ProductProps[]
+			if (error) {
+				throw new Error(error.message)
+			}
 
-			setPizzas(pizzas)
-		} catch {
+			setPizzas(data as ProductProps[])
+		} catch (error) {
 			Alert.alert('Error', 'An error occurred while fetching pizzas')
 		}
 	}, [])
