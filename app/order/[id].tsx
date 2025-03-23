@@ -18,8 +18,7 @@ import {
 	View,
 } from 'react-native'
 import { getStatusBarHeight } from 'react-native-iphone-x-helper'
-import { doc, getDoc, addDoc, collection } from 'firebase/firestore'
-import { db } from '@/firebaseConfig'
+import { supabase } from '@/utils/supabase'
 import type { ProductProps } from '@/components/ui/product-card'
 import { useAuth } from '@/hooks/auth'
 
@@ -121,15 +120,18 @@ export default function Order() {
 	useEffect(() => {
 		const fetchPizza = async () => {
 			try {
-				const docRef = doc(db, 'pizzas', id.toString())
-				const docSnap = await getDoc(docRef)
+				const { data, error } = await supabase
+					.from('pizzas')
+					.select('*')
+					.eq('id', id)
+					.single()
 
-				if (docSnap.exists()) {
-					setPizza(docSnap.data() as PizzaResponse)
-				} else {
-					console.error('No such document!')
+				if (error) {
+					throw error
 				}
-			} catch {
+
+				setPizza(data as PizzaResponse)
+			} catch (error) {
 				Alert.alert('Error', 'An error occurred while fetching pizza')
 			}
 		}
@@ -167,7 +169,12 @@ export default function Order() {
 				image: pizza?.photo_url,
 			}
 
-			await addDoc(collection(db, 'orders'), order)
+			const { error } = await supabase.from('orders').insert(order)
+
+			if (error) {
+				throw error
+			}
+
 			Alert.alert('Order', 'Order placed successfully!')
 			router.push('/home') // Navigate back to home after placing the order
 		} catch (error) {

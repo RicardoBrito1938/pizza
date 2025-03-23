@@ -4,17 +4,9 @@ import extendedTheme from '@/styles/extendedTheme'
 import { styled } from '@fast-styles/react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Alert, FlatList, Text, View } from 'react-native'
-import { getStatusBarHeight } from 'react-native-iphone-x-helper'
-import {
-	collection,
-	query,
-	orderBy,
-	onSnapshot,
-	updateDoc,
-	doc,
-} from 'firebase/firestore'
-import { db } from '@/firebaseConfig'
 import { useEffect, useState } from 'react'
+import { supabase } from '@/utils/supabase'
+import { getStatusBarHeight } from 'react-native-iphone-x-helper'
 
 const Container = styled(View, {
 	flex: 1,
@@ -51,9 +43,14 @@ export default function Orders() {
 
 	const updateOrderStatus = async (id: string) => {
 		try {
-			await updateDoc(doc(db, 'orders', id), {
-				status: 'delivered',
-			})
+			const { error } = await supabase
+				.from('orders')
+				.update({ status: 'delivered' })
+				.eq('id', id)
+
+			if (error) {
+				throw error
+			}
 		} catch (error) {
 			console.error('Error updating order status:', error)
 		}
@@ -73,26 +70,50 @@ export default function Orders() {
 	}
 
 	useEffect(() => {
-		const ordersRef = collection(db, 'orders')
-		const q = query(ordersRef, orderBy('status'))
+		const fetchOrders = async () => {
+			try {
+				const { data, error } = await supabase
+					.from('orders')
+					.select('*')
+					.order('status')
 
-		const unsubscribe = onSnapshot(
-			q,
-			(querySnapshot) => {
-				const fetchedOrders = querySnapshot.docs.map((doc) => ({
-					id: doc.id,
-					...doc.data(),
-				})) as Order[]
+				if (error) {
+					throw error
+				}
 
-				setOrders(fetchedOrders)
-			},
-			(error) => {
-				console.error('Error listening to orders:', error)
-			},
-		)
+				setOrders(data as Order[])
+			} catch (error) {
+				console.error('Error fetching orders:', error)
+			}
+		}
 
-		// Cleanup subscription on unmount
-		return () => unsubscribe()
+		fetchOrders()
+
+		const subscription = supabase
+			.channel('orders')
+			.on(
+				'postgres_changes',
+				{ event: 'INSERT', schema: 'public', table: 'orders' },
+				(payload) => {
+					setOrders((prevOrders) => [payload.new as Order, ...prevOrders])
+				},
+			)
+			.on(
+				'postgres_changes',
+				{ event: 'UPDATE', schema: 'public', table: 'orders' },
+				(payload) => {
+					setOrders((prevOrders) =>
+						prevOrders.map((order) =>
+							order.id === payload.new.id ? (payload.new as Order) : order,
+						),
+					)
+				},
+			)
+			.subscribe()
+
+		return () => {
+			supabase.removeChannel(subscription)
+		}
 	}, [])
 
 	return (

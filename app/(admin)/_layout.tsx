@@ -2,22 +2,64 @@ import { Tabs } from 'expo-router'
 import extendedTheme from '@/styles/extendedTheme'
 import { BottomMenu } from '@/components/ui/bottom-menu'
 import { useState, useEffect } from 'react'
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
-import { db } from '@/firebaseConfig'
+import { supabase } from '@/utils/supabase'
 
 export default function TabLayout() {
 	const [notifications, setNotifications] = useState(0)
 
 	useEffect(() => {
-		const ordersRef = collection(db, 'orders')
-		const q = query(ordersRef, where('status', '==', 'prepared'))
+		const fetchNotifications = async () => {
+			try {
+				const { data, error } = await supabase
+					.from('orders')
+					.select('*', { count: 'exact' })
+					.eq('status', 'prepared')
 
-		const unsubscribe = onSnapshot(q, (querySnapshot) => {
-			setNotifications(querySnapshot.size)
-		})
+				if (error) {
+					throw error
+				}
 
-		// Cleanup subscription on unmount
-		return () => unsubscribe()
+				setNotifications(data.length)
+			} catch (error) {
+				console.error('Error fetching notifications:', error)
+			}
+		}
+
+		fetchNotifications()
+
+		const subscription = supabase
+			.channel('orders')
+			.on(
+				'postgres_changes',
+				{ event: 'INSERT', schema: 'public', table: 'orders' },
+				(payload) => {
+					if (payload.new.status === 'prepared') {
+						setNotifications((prev) => prev + 1)
+					}
+				},
+			)
+			.on(
+				'postgres_changes',
+				{ event: 'UPDATE', schema: 'public', table: 'orders' },
+				(payload) => {
+					if (
+						payload.old.status !== 'prepared' &&
+						payload.new.status === 'prepared'
+					) {
+						setNotifications((prev) => prev + 1)
+					} else if (
+						payload.old.status === 'prepared' &&
+						payload.new.status !== 'prepared'
+					) {
+						setNotifications((prev) => Math.max(prev - 1, 0))
+					}
+				},
+			)
+			.subscribe()
+
+		return () => {
+			supabase.removeChannel(subscription)
+		}
 	}, [])
 
 	return (

@@ -134,3 +134,34 @@ CREATE POLICY "Allow delete for authenticated users"
 ON storage.objects
 FOR DELETE
 USING (auth.role() = 'authenticated' AND bucket_id = 'pizzas');
+
+asdfadsf
+
+
+create table orders (
+    id uuid default uuid_generate_v4() primary key,
+    quantity int not null,
+    amount numeric(10, 2) not null,
+    pizza text not null,
+    size text not null,
+    table_number text not null,
+    status text not null default 'preparing',
+    waiter_id uuid references profiles(id),
+    image text not null,
+    created_at timestamp default now()
+);
+
+-- Enable Row-Level Security
+alter table orders enable row level security;
+
+-- Allow authenticated users to insert orders
+create policy "Allow authenticated users to create orders"
+on orders
+for insert
+with check (auth.uid() is not null);
+
+-- Allow authenticated users to read their orders
+create policy "Allow authenticated users to read orders"
+on orders
+for select
+using (auth.uid() is not null);
