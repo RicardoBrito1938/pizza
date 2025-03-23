@@ -1,5 +1,5 @@
 import { useFonts } from 'expo-font'
-import { Slot, SplashScreen, Stack } from 'expo-router'
+import { Slot } from 'expo-router'
 import { DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display'
 import { DMSans_400Regular } from '@expo-google-fonts/dm-sans'
 import { AuthProvider } from '@/hooks/auth'

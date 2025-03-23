@@ -3,11 +3,9 @@ import {
 	Image,
 	KeyboardAvoidingView,
 	Platform,
-	Pressable,
 	ScrollView,
 	Text,
 	View,
-	Alert,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import extendedTheme from '@/styles/extendedTheme'
@@ -17,7 +15,8 @@ import { getBottomSpace } from 'react-native-iphone-x-helper'
 import brandImg from '@/assets/images/brand.png'
 import { useAuth } from '@/hooks/auth'
 import { useState } from 'react'
-import { useRouter } from 'expo-router'
+import { Checkbox } from '@/components/ui/checkbox'
+import { ButtonBack } from '@/components/ui/button-back'
 
 const Container = styled(LinearGradient, {
 	flex: 1,
@@ -57,39 +56,35 @@ const Brand = styled(Image, {
 	},
 })
 
-const ForgotPasswordButton = styled(Pressable, {
-	alignSelf: 'flex-end',
+const CheckboxContainer = styled(View, {
+	flexDirection: 'row',
+	alignItems: 'center',
 	marginBottom: 20,
 })
 
-const ForgotPasswordText = styled(Text, {
+const CheckboxLabel = styled(Text, {
 	color: extendedTheme.colors.$title,
 	fontSize: 14,
 	fontFamily: extendedTheme.fonts.$textFont,
+	marginLeft: 8,
 })
 
-const ButtonsContainer = styled(View, {
-	gap: 4,
-})
-
-const SignUpText = styled(Text, {
-	color: extendedTheme.colors.$title,
-	fontSize: 14,
-	fontFamily: extendedTheme.fonts.$textFont,
-	textDecorationLine: 'underline',
-	textAlign: 'center',
-	marginTop: 16,
-})
-
-export default function RootLayout() {
+export default function SignUp() {
 	const [email, setEmail] = useState('')
+	const [name, setName] = useState('')
 	const [password, setPassword] = useState('')
+	const [confirmPassword, setConfirmPassword] = useState('')
+	const [isAdmin, setIsAdmin] = useState(false)
 
-	const { signIn, isLogging, forgotPassword } = useAuth()
-	const router = useRouter()
+	const { register, isLogging } = useAuth()
 
-	const handleSignIn = () => {
-		signIn(email, password)
+	const handleSignUp = async () => {
+		if (password !== confirmPassword) {
+			alert('Passwords do not match')
+			return
+		}
+
+		await register(email, password, name)
 	}
 
 	return (
@@ -106,8 +101,16 @@ export default function RootLayout() {
 				style={{ width: '100%' }}
 			>
 				<Content>
+					<ButtonBack style={{ marginBottom: 16 }} />
 					<Brand />
-					<Title>Login</Title>
+					<Title>Sign Up</Title>
+					<Input
+						variant='secondary'
+						placeholder='Name'
+						autoCorrect={false}
+						autoCapitalize='words'
+						onChangeText={setName}
+					/>
 					<Input
 						variant='secondary'
 						placeholder='E-mail'
@@ -121,22 +124,26 @@ export default function RootLayout() {
 						autoCorrect={false}
 						autoCapitalize='none'
 						onChangeText={setPassword}
-						secureTextEntry
+						// secureTextEntry
 					/>
-					<ForgotPasswordButton onPress={() => forgotPassword(email)}>
-						<ForgotPasswordText>Forgot password?</ForgotPasswordText>
-					</ForgotPasswordButton>
-					<ButtonsContainer>
-						<Button
-							title='Sign in'
-							variant='primary'
-							onPress={handleSignIn}
-							loading={isLogging}
-						/>
-					</ButtonsContainer>
-					<Pressable onPress={() => router.push('/sign-up')}>
-						<SignUpText>Go to Sign Up</SignUpText>
-					</Pressable>
+					<Input
+						variant='secondary'
+						placeholder='Confirm Password'
+						autoCorrect={false}
+						autoCapitalize='none'
+						onChangeText={setConfirmPassword}
+						// secureTextEntry
+					/>
+					<CheckboxContainer>
+						<Checkbox checked={isAdmin} onPress={() => setIsAdmin(!isAdmin)} />
+						<CheckboxLabel>Admin</CheckboxLabel>
+					</CheckboxContainer>
+					<Button
+						title='Sign Up'
+						variant='primary'
+						onPress={handleSignUp}
+						loading={isLogging}
+					/>
 				</Content>
 			</KeyboardAvoidingView>
 		</Container>
