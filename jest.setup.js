@@ -1,5 +1,8 @@
 import '@testing-library/jest-native'
 
+// Add this mock for React Native JS polyfills
+jest.mock('@react-native/js-polyfills', () => ({}))
+
 jest.mock('i18next', () => ({
 	changeLanguage: jest.fn().mockResolvedValue({}),
 	t: jest.fn((key) => key),
