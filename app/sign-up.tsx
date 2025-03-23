@@ -6,12 +6,16 @@ import {
 	ScrollView,
 	Text,
 	View,
+	SafeAreaView,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import extendedTheme from '@/styles/extendedTheme'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { getBottomSpace } from 'react-native-iphone-x-helper'
+import {
+	getBottomSpace,
+	getStatusBarHeight,
+} from 'react-native-iphone-x-helper'
 import brandImg from '@/assets/images/brand.png'
 import { useAuth } from '@/hooks/auth'
 import { useState } from 'react'
@@ -69,6 +73,13 @@ const CheckboxLabel = styled(Text, {
 	marginLeft: 8,
 })
 
+const Header = styled(View, {
+	width: '100%',
+	paddingHorizontal: 24,
+	paddingTop: getStatusBarHeight() + 33,
+	marginBottom: 16,
+})
+
 export default function SignUp() {
 	const [email, setEmail] = useState('')
 	const [name, setName] = useState('')
@@ -88,64 +99,71 @@ export default function SignUp() {
 	}
 
 	return (
-		<Container
-			colors={[
-				extendedTheme.tokens.$gradientStart,
-				extendedTheme.tokens.$gradientEnd,
-			]}
-			start={{ x: 0, y: 1 }}
-			end={{ x: 0.5, y: 0.5 }}
-		>
-			<KeyboardAvoidingView
-				behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-				style={{ width: '100%' }}
+		<SafeAreaView style={{ flex: 1 }}>
+			<Container
+				colors={[
+					extendedTheme.tokens.$gradientStart,
+					extendedTheme.tokens.$gradientEnd,
+				]}
+				start={{ x: 0, y: 1 }}
+				end={{ x: 0.5, y: 0.5 }}
 			>
-				<Content>
-					<ButtonBack style={{ marginBottom: 16 }} />
-					<Brand />
-					<Title>Sign Up</Title>
-					<Input
-						variant='secondary'
-						placeholder='Name'
-						autoCorrect={false}
-						autoCapitalize='words'
-						onChangeText={setName}
-					/>
-					<Input
-						variant='secondary'
-						placeholder='E-mail'
-						autoCorrect={false}
-						autoCapitalize='none'
-						onChangeText={setEmail}
-					/>
-					<Input
-						variant='secondary'
-						placeholder='Password'
-						autoCorrect={false}
-						autoCapitalize='none'
-						onChangeText={setPassword}
-						// secureTextEntry
-					/>
-					<Input
-						variant='secondary'
-						placeholder='Confirm Password'
-						autoCorrect={false}
-						autoCapitalize='none'
-						onChangeText={setConfirmPassword}
-						// secureTextEntry
-					/>
-					<CheckboxContainer>
-						<Checkbox checked={isAdmin} onPress={() => setIsAdmin(!isAdmin)} />
-						<CheckboxLabel>Admin</CheckboxLabel>
-					</CheckboxContainer>
-					<Button
-						title='Sign Up'
-						variant='primary'
-						onPress={handleSignUp}
-						loading={isLogging}
-					/>
-				</Content>
-			</KeyboardAvoidingView>
-		</Container>
+				<KeyboardAvoidingView
+					behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+					style={{ width: '100%' }}
+				>
+					<Header>
+						<ButtonBack />
+					</Header>
+					<Content>
+						<Brand />
+						<Title>Sign Up</Title>
+						<Input
+							variant='secondary'
+							placeholder='Name'
+							autoCorrect={false}
+							autoCapitalize='words'
+							onChangeText={setName}
+						/>
+						<Input
+							variant='secondary'
+							placeholder='E-mail'
+							autoCorrect={false}
+							autoCapitalize='none'
+							onChangeText={setEmail}
+						/>
+						<Input
+							variant='secondary'
+							placeholder='Password'
+							autoCorrect={false}
+							autoCapitalize='none'
+							onChangeText={setPassword}
+							// secureTextEntry
+						/>
+						<Input
+							variant='secondary'
+							placeholder='Confirm Password'
+							autoCorrect={false}
+							autoCapitalize='none'
+							onChangeText={setConfirmPassword}
+							// secureTextEntry
+						/>
+						<CheckboxContainer>
+							<Checkbox
+								checked={isAdmin}
+								onPress={() => setIsAdmin(!isAdmin)}
+							/>
+							<CheckboxLabel>Admin</CheckboxLabel>
+						</CheckboxContainer>
+						<Button
+							title='Sign Up'
+							variant='primary'
+							onPress={handleSignUp}
+							loading={isLogging}
+						/>
+					</Content>
+				</KeyboardAvoidingView>
+			</Container>
+		</SafeAreaView>
 	)
 }
