@@ -2,31 +2,6 @@
 
 import '@testing-library/jest-native'
 
-jest.mock('expo-modules-core', () => {
-	const actual = jest.requireActual('expo-modules-core')
-
-	return {
-		...actual,
-		NativeModulesProxy: {},
-		requireNativeModule: jest.fn(),
-		EventEmitter: jest.fn().mockImplementation(() => ({
-			addListener: jest.fn(),
-			removeListener: jest.fn(),
-			removeAllListeners: jest.fn(),
-		})),
-	}
-})
-
-// ✅ FULL MOCK for @react-native/js-polyfills/error-guard
-jest.mock('@react-native/js-polyfills/error-guard', () => ({
-	reportFatalError: jest.fn((error) => {
-		console.warn('Mocked reportFatalError called:', error)
-	}),
-	setGlobalHandler: jest.fn((handler) => {
-		console.log('Mocked setGlobalHandler called')
-	}),
-}))
-
 jest.mock('i18next', () => ({
 	changeLanguage: jest.fn().mockResolvedValue({}),
 	t: jest.fn((key) => key),
