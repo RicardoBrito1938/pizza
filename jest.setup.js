@@ -93,5 +93,6 @@ jest.mock('expo-splash-screen', () => ({
 jest.mock('expo-router', () => ({
 	useRouter: jest.fn(() => ({
 		push: jest.fn(),
+		back: jest.fn(),
 	})),
 }))

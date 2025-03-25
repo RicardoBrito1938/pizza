@@ -19,11 +19,16 @@ export const ButtonBack = ({ ...rest }: WithStyles<PressableProps>) => {
 	const router = useRouter()
 
 	return (
-		<Container {...rest} onPress={() => router.back()}>
+		<Container
+			{...rest}
+			onPress={() => router.back()}
+			testID='button-back-container'
+		>
 			<MaterialIcons
 				name='chevron-left'
 				size={18}
 				color={extendedTheme.colors.$title}
+				testID='button-back-icon'
 			/>
 		</Container>
 	)
