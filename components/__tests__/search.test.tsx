@@ -1,8 +1,6 @@
 import { render, fireEvent } from '@testing-library/react-native'
 import { Search } from '../ui/search'
 
-// @expo/vector-icons mock is now in jest.setup.js
-
 describe('Search', () => {
 	it('renders correctly with all elements', () => {
 		const { getByTestId } = render(<Search onClear={jest.fn()} />)

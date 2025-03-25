@@ -2,21 +2,6 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native'
 import ProductDetail from '@/app/product/[id]'
 import { Alert } from 'react-native'
 
-// Mock dependencies
-jest.mock('expo-linear-gradient', () => {
-	const React = require('react')
-	const { View } = require('react-native')
-	return {
-		LinearGradient: jest.fn(({ children, testID }) => {
-			return React.createElement(
-				View,
-				{ testID: testID || 'linear-gradient' },
-				children,
-			)
-		}),
-	}
-})
-
 // Mock supabase
 const mockPizza = {
 	id: '1',
@@ -28,12 +13,6 @@ const mockPizza = {
 	price_size_m: 14.99,
 	price_size_l: 19.99,
 }
-
-// Mock Alert
-jest.spyOn(Alert, 'alert').mockImplementation((title, message) => {
-	console.log(`Alert called: ${title} - ${message}`)
-	return 0
-})
 
 // Create a module-level variable that will be safe to use inside the tests
 // but not referenced inside the mock definition
@@ -73,51 +52,6 @@ const mockStorageUpload = jest.fn().mockReturnValue({
 	data: { path: 'pizzas/test.jpg' },
 	error: null,
 })
-
-const mockGetPublicUrl = jest.fn().mockReturnValue({
-	data: { publicUrl: 'https://example.com/test.jpg' },
-})
-
-const mockStorageRemove = jest.fn().mockReturnValue({
-	error: null,
-})
-
-jest.mock('@/supabase/supabase', () => ({
-	supabase: {
-		from: mockSupabaseFrom,
-		storage: {
-			from: jest.fn().mockReturnValue({
-				upload: mockStorageUpload,
-				getPublicUrl: mockGetPublicUrl,
-				remove: mockStorageRemove,
-			}),
-		},
-	},
-}))
-
-// Mock image picker
-jest.mock('expo-image-picker', () => ({
-	requestMediaLibraryPermissionsAsync: jest
-		.fn()
-		.mockResolvedValue({ status: 'granted' }),
-	launchImageLibraryAsync: jest.fn().mockResolvedValue({
-		canceled: false,
-		assets: [{ uri: 'file:///test.jpg' }],
-	}),
-}))
-
-// Mock MIME types
-jest.mock('react-native-mime-types', () => ({
-	lookup: jest.fn().mockReturnValue('image/jpeg'),
-}))
-
-// Mock FileSystem
-jest.mock('expo-file-system', () => ({
-	getInfoAsync: jest
-		.fn()
-		.mockResolvedValue({ exists: true, uri: 'file://test.jpg' }),
-	readAsStringAsync: jest.fn().mockResolvedValue('file-content'),
-}))
 
 describe('Product Detail Page', () => {
 	beforeEach(() => {
@@ -187,7 +121,6 @@ describe('Product Detail Page', () => {
 		// Fill values (mock implementation) and ensure image exists
 		mockSupabaseFrom.mockClear()
 		mockStorageUpload.mockClear()
-		Alert.alert.mockClear()
 
 		// Press the register button
 		const registerButton = getByText('Register pizza')

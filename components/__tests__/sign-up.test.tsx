@@ -2,8 +2,6 @@ import { render, fireEvent } from '@testing-library/react-native'
 import SignUp from '@/app/sign-up'
 import { Alert } from 'react-native'
 
-// All common mocks are now in jest.setup.js
-
 // Mock the auth hook
 const mockRegister = jest.fn()
 jest.mock('@/hooks/auth', () => ({

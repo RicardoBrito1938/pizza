@@ -1,20 +1,6 @@
 import { render, fireEvent } from '@testing-library/react-native'
 import { Checkbox } from '../ui/checkbox'
 
-// Mock expo-checkbox to avoid native module issues in tests
-jest.mock('expo-checkbox', () => {
-	const React = require('react')
-	return jest.fn().mockImplementation(({ value, onValueChange, testID }) => {
-		return React.createElement('View', {
-			testID,
-			onClick: () => onValueChange(!value),
-			accessibilityState: {
-				checked: value,
-			},
-		})
-	})
-})
-
 describe('Checkbox', () => {
 	it('renders correctly with label', () => {
 		const { getByTestId, getByText } = render(

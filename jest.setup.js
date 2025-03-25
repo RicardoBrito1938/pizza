@@ -139,3 +139,29 @@ jest.mock('expo-file-system', () => ({
 		.mockResolvedValue({ exists: true, uri: 'file://test.jpg' }),
 	readAsStringAsync: jest.fn().mockResolvedValue('file-content'),
 }))
+
+// Mock the supabase client globally
+jest.mock('@/supabase/supabase', () => ({
+	supabase: {
+		auth: {
+			getSession: jest.fn(() =>
+				Promise.resolve({
+					data: { session: { user: { id: '123', email: 'test@example.com' } } },
+					error: null,
+				}),
+			),
+			signIn: jest.fn(),
+			signOut: jest.fn(),
+		},
+		from: jest.fn(() => ({
+			select: jest.fn().mockReturnThis(),
+			eq: jest.fn().mockReturnThis(),
+			single: jest.fn(() =>
+				Promise.resolve({
+					data: { is_admin: true },
+					error: null,
+				}),
+			),
+		})),
+	},
+}))
