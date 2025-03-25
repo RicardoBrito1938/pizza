@@ -74,32 +74,6 @@ jest.mock('expo-router', () => ({
 	}),
 }))
 
-// Fix the @expo/vector-icons mock by not using JSX
-jest.mock('@expo/vector-icons', () => {
-	return {
-		MaterialIcons: function MockMaterialIcons(props) {
-			const React = require('react')
-			const { View } = require('react-native')
-			return React.createElement(View, {
-				testID: props.testID || `icon-${props.name}`,
-				name: props.name,
-				size: props.size,
-				color: props.color,
-			})
-		},
-		Feather: function MockFeather(props) {
-			const React = require('react')
-			const { View } = require('react-native')
-			return React.createElement(View, {
-				testID: props.testID || `icon-${props.name}`,
-				name: props.name,
-				size: props.size,
-				color: props.color,
-			})
-		},
-	}
-})
-
 describe('Home Page', () => {
 	beforeEach(() => {
 		jest.clearAllMocks()

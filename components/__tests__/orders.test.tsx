@@ -2,21 +2,6 @@ import { render, waitFor } from '@testing-library/react-native'
 import Orders from '@/app/(admin)/orders'
 import { Alert } from 'react-native'
 
-// Mock dependencies
-jest.mock('expo-linear-gradient', () => {
-	const React = require('react')
-	const { View } = require('react-native')
-	return {
-		LinearGradient: jest.fn(({ children, testID }) => {
-			return React.createElement(
-				View,
-				{ testID: testID || 'linear-gradient' },
-				children,
-			)
-		}),
-	}
-})
-
 // Create mock data
 const mockOrders = [
 	{
@@ -71,11 +56,6 @@ jest.mock('@/utils/supabase', () => {
 		},
 	}
 })
-
-// Mock react-native-iphone-x-helper
-jest.mock('react-native-iphone-x-helper', () => ({
-	getStatusBarHeight: jest.fn(() => 44),
-}))
 
 describe('Orders Page', () => {
 	beforeEach(() => {

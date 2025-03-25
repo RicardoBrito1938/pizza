@@ -143,6 +143,7 @@ export default function Home() {
 						name='logout'
 						size={24}
 						color={extendedTheme.colors.$title}
+						testID='icon-logout'
 					/>
 				</Pressable>
 			</Header>
