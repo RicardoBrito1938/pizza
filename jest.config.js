@@ -25,9 +25,5 @@ module.exports = {
 		'^@/assets/(.*)$': '<rootDir>/assets/$1',
 		'^@/services/(.*)$': '<rootDir>/services/$1',
 		'^@/gen/(.*)$': '<rootDir>/gen/$1',
-
-		// ✅ Add this line to fully mock error-guard and avoid Flow crash
-		'^@react-native/js-polyfills/error-guard$':
-			'<rootDir>/__mocks__/error-guard.js',
 	},
 }

@@ -61,11 +61,15 @@ export const BottomMenu = ({ title, color, notifications }: Props) => {
 	const variant = !hasNotifications ? 'active' : 'inactive'
 
 	return (
-		<Container>
-			<Title style={{ color }}>{title}</Title>
+		<Container testID='bottom-menu-container'>
+			<Title style={{ color }} testID='bottom-menu-title'>
+				{title}
+			</Title>
 			{notifications && (
-				<Notification variant={variant}>
-					<Quantity variant={variant}>{notifications}</Quantity>
+				<Notification variant={variant} testID='bottom-menu-notification'>
+					<Quantity variant={variant} testID='bottom-menu-quantity'>
+						{notifications}
+					</Quantity>
 				</Notification>
 			)}
 		</Container>
