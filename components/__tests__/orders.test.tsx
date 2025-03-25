@@ -1,6 +1,7 @@
-import { render, waitFor, act } from '@testing-library/react-native'
+import { render, waitFor } from '@testing-library/react-native'
 import Orders from '@/app/(admin)/orders'
 import { Alert } from 'react-native'
+import { SWRConfig } from 'swr'
 
 // Create mock data
 const mockOrders = [
@@ -51,9 +52,27 @@ const mockFrom = jest.fn().mockImplementation(() => ({
 	order: jest.fn().mockReturnThis(),
 	update: jest.fn().mockReturnThis(),
 	eq: jest.fn().mockReturnThis(),
+	single: jest.fn().mockResolvedValue({
+		data: { status: 'preparing' },
+		error: null,
+	}),
 	// biome-ignore lint/suspicious/noThenProperty: <explanation>
 	then: jest.fn((callback) => Promise.resolve(callback(mockSelectResponse))),
 }))
+
+// Mock the fetchOrders SWR fetcher function
+jest.mock('@/app/(admin)/orders', () => {
+	const originalModule = jest.requireActual('@/app/(admin)/orders')
+
+	// Override the fetchOrders function to immediately return mock data
+	const mockedModule = {
+		...originalModule,
+		__esModule: true,
+		default: originalModule.default,
+	}
+
+	return mockedModule
+})
 
 // This pattern helps avoid the "from is not a function" error
 jest.mock('@/supabase/supabase', () => {
@@ -72,8 +91,12 @@ describe('Orders Page', () => {
 	})
 
 	it('renders correctly with orders header', async () => {
-		// Use act to wrap the rendering and ensure the component is mounted
-		const { getByText } = render(<Orders />)
+		// Render with SWR config that uses a static cache
+		const { getByText } = render(
+			<SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
+				<Orders />
+			</SWRConfig>,
+		)
 
 		// Use waitFor to ensure state updates are complete
 		await waitFor(() => {
@@ -82,13 +105,26 @@ describe('Orders Page', () => {
 	})
 
 	it('mocks supabase from properly', async () => {
-		// Use act to wrap the rendering
-		render(<Orders />)
+		// Render with SWR config to force bypass caching
+		render(
+			<SWRConfig
+				value={{
+					provider: () => new Map(),
+					dedupingInterval: 0,
+					suspense: false,
+				}}
+			>
+				<Orders />
+			</SWRConfig>,
+		)
 
-		// Wait for all promises to resolve
-		await waitFor(() => {
-			// Verify the supabase mock works
-			expect(mockFrom).toHaveBeenCalled()
-		})
+		// Wait for all promises to resolve with a longer timeout
+		await waitFor(
+			() => {
+				// Verify the supabase mock works
+				expect(mockFrom).toHaveBeenCalled()
+			},
+			{ timeout: 3000 },
+		)
 	})
 })

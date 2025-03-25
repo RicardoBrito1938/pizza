@@ -1,32 +1,35 @@
 import { Tabs } from 'expo-router'
 import extendedTheme from '@/styles/extendedTheme'
 import { BottomMenu } from '@/components/ui/bottom-menu'
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { supabase } from '@/supabase/supabase'
+import useSWR from 'swr'
+
+// Fetcher function for notifications
+const fetchNotifications = async () => {
+	const { data, error } = await supabase
+		.from('orders')
+		.select('*', { count: 'exact' })
+		.eq('status', 'prepared')
+
+	if (error) {
+		throw error
+	}
+
+	return data.length
+}
 
 export default function TabLayout() {
-	const [notifications, setNotifications] = useState(0)
+	const { data: notifications = 0, mutate: refreshNotifications } = useSWR(
+		'notifications',
+		fetchNotifications,
+		{
+			refreshInterval: 0, // Only refresh on demand or when real-time update occurs
+			revalidateOnFocus: true,
+		},
+	)
 
 	useEffect(() => {
-		const fetchNotifications = async () => {
-			try {
-				const { data, error } = await supabase
-					.from('orders')
-					.select('*', { count: 'exact' })
-					.eq('status', 'prepared')
-
-				if (error) {
-					throw error
-				}
-
-				setNotifications(data.length)
-			} catch (error) {
-				console.error('Error fetching notifications:', error)
-			}
-		}
-
-		fetchNotifications()
-
 		const subscription = supabase
 			.channel('orders')
 			.on(
@@ -34,7 +37,7 @@ export default function TabLayout() {
 				{ event: 'INSERT', schema: 'public', table: 'orders' },
 				(payload) => {
 					if (payload.new.status === 'prepared') {
-						setNotifications((prev) => prev + 1)
+						refreshNotifications()
 					}
 				},
 			)
@@ -43,15 +46,12 @@ export default function TabLayout() {
 				{ event: 'UPDATE', schema: 'public', table: 'orders' },
 				(payload) => {
 					if (
-						payload.old.status !== 'prepared' &&
-						payload.new.status === 'prepared'
+						(payload.old.status !== 'prepared' &&
+							payload.new.status === 'prepared') ||
+						(payload.old.status === 'prepared' &&
+							payload.new.status !== 'prepared')
 					) {
-						setNotifications((prev) => prev + 1)
-					} else if (
-						payload.old.status === 'prepared' &&
-						payload.new.status !== 'prepared'
-					) {
-						setNotifications((prev) => Math.max(prev - 1, 0))
+						refreshNotifications()
 					}
 				},
 			)
@@ -60,7 +60,7 @@ export default function TabLayout() {
 		return () => {
 			supabase.removeChannel(subscription)
 		}
-	}, [])
+	}, [refreshNotifications])
 
 	return (
 		<Tabs

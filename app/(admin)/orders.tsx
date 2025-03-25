@@ -4,9 +4,10 @@ import extendedTheme from '@/styles/extendedTheme'
 import { styled } from '@fast-styles/react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Alert, FlatList, Text, View } from 'react-native'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
 import { supabase } from '@/supabase/supabase'
 import { getStatusBarHeight } from 'react-native-iphone-x-helper'
+import useSWR, { mutate } from 'swr'
 
 const Container = styled(View, {
 	flex: 1,
@@ -43,25 +44,30 @@ const nextStatusMap = {
 	prepared: 'delivered',
 }
 
-export default function Orders() {
-	const [orders, setOrders] = useState<Order[]>([])
+// Fetcher function for SWR
+const fetchOrders = async () => {
+	const { data, error } = await supabase
+		.from('orders')
+		.select('*')
+		.order('created_at', { ascending: false })
 
-	const fetchOrders = async () => {
-		try {
-			const { data, error } = await supabase
-				.from('orders')
-				.select('*')
-				.order('created_at', { ascending: false })
-
-			if (error) {
-				throw error
-			}
-
-			setOrders(data as Order[])
-		} catch (error) {
-			console.error('Error fetching orders:', error)
-		}
+	if (error) {
+		throw error
 	}
+
+	return data as Order[]
+}
+
+export default function Orders() {
+	const { data: orders = [], mutate: refreshOrders } = useSWR(
+		'orders',
+		fetchOrders,
+		{
+			refreshInterval: 0, // Only refresh on demand or when real-time update occurs
+			revalidateOnFocus: true,
+			dedupingInterval: 2000,
+		},
+	)
 
 	const updateOrderStatus = async (id: string) => {
 		try {
@@ -89,8 +95,8 @@ export default function Orders() {
 				throw updateError
 			}
 
-			// Refetch orders to update the state
-			await fetchOrders()
+			// Refresh orders via SWR
+			await refreshOrders()
 
 			Alert.alert(
 				'Update',
@@ -116,25 +122,6 @@ export default function Orders() {
 	}
 
 	useEffect(() => {
-		const fetchOrdersEffect = async () => {
-			try {
-				const { data, error } = await supabase
-					.from('orders')
-					.select('*')
-					.order('created_at', { ascending: false })
-
-				if (error) {
-					throw error
-				}
-
-				setOrders(data as Order[])
-			} catch (error) {
-				console.error('Error fetching orders:', error)
-			}
-		}
-
-		fetchOrdersEffect()
-
 		// Subscribe to real-time updates
 		const subscription = supabase
 			.channel('orders')
@@ -143,7 +130,7 @@ export default function Orders() {
 				{ event: '*', schema: 'public', table: 'orders' },
 				(payload) => {
 					console.log('Change received!', payload)
-					fetchOrdersEffect() // Refresh orders on any change
+					refreshOrders() // Refresh orders via SWR on any change
 				},
 			)
 			.subscribe()
@@ -152,7 +139,7 @@ export default function Orders() {
 		return () => {
 			supabase.removeChannel(subscription)
 		}
-	}, [])
+	}, [refreshOrders])
 
 	return (
 		<Container>
