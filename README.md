@@ -38,11 +38,6 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
        supabase db push
        ```
 
-5. Follow the instructions for setting up Firebase:
-
-   [Using Firebase with Expo](https://docs.expo.dev/guides/using-firebase/)
-
-6. Create authentication and storage in the Firebase console. Retrieve the configuration file and paste it into the `firebase.js` file.
 
 ## Database Schema
 
