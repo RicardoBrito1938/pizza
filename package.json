@@ -9,7 +9,10 @@
 		"ios": "expo start --ios",
 		"web": "expo start --web",
 		"test": "jest  --watchAll",
-		"lint": "expo lint"
+		"lint": "expo lint",
+		"clean": "rm -rf node_modules && rm -rf package-lock.json",
+		"clean-cache": "npm cache verify",
+		"reset-metro": "rm -rf $TMPDIR/metro-* && rm -rf $TMPDIR/haste-map-*"
 	},
 	"dependencies": {
 		"@babel/runtime": "^7.26.10",
