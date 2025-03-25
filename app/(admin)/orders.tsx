@@ -38,15 +38,20 @@ type Order = {
 	image: string
 }
 
+const nextStatusMap = {
+	preparing: 'prepared',
+	prepared: 'delivered',
+}
+
 export default function Orders() {
 	const [orders, setOrders] = useState<Order[]>([])
 
-	const fetchOrders = useCallback(async () => {
+	const fetchOrders = async () => {
 		try {
 			const { data, error } = await supabase
 				.from('orders')
 				.select('*')
-				.order('status')
+				.order('created_at', { ascending: false })
 
 			if (error) {
 				throw error
@@ -56,21 +61,41 @@ export default function Orders() {
 		} catch (error) {
 			console.error('Error fetching orders:', error)
 		}
-	}, [])
+	}
 
 	const updateOrderStatus = async (id: string) => {
 		try {
-			const { error } = await supabase
+			// Fetch the current status of the order
+			const { data: order, error: fetchError } = await supabase
 				.from('orders')
-				.update({ status: 'delivered' })
+				.select('status')
+				.eq('id', id)
+				.single()
+
+			if (fetchError) {
+				throw fetchError
+			}
+
+			// Update the order status
+			const { error: updateError } = await supabase
+				.from('orders')
+				.update({
+					status: nextStatusMap[order?.status as keyof typeof nextStatusMap],
+				})
 				.eq('id', id)
 				.select()
 
-			if (error) {
-				throw error
+			if (updateError) {
+				throw updateError
 			}
 
-			Alert.alert('Update', 'Order status updated successfully!')
+			// Refetch orders to update the state
+			await fetchOrders()
+
+			Alert.alert(
+				'Update',
+				`Order status updated to ${nextStatusMap[order?.status as keyof typeof nextStatusMap]} successfully!`,
+			)
 		} catch (error) {
 			console.error('Error updating order status:', error)
 			Alert.alert('Error', 'An error occurred while updating the order status.')
@@ -78,7 +103,7 @@ export default function Orders() {
 	}
 
 	const handlePizzaDelivered = async (id: string) => {
-		Alert.alert('Order', 'Confirm order delivered?', [
+		Alert.alert('Order', 'Confirm order update?', [
 			{
 				text: 'Cancel',
 				style: 'cancel',
@@ -109,42 +134,25 @@ export default function Orders() {
 		}
 
 		fetchOrdersEffect()
-	}, [])
 
-	useEffect(() => {
-		const initializeOrders = async () => {
-			await fetchOrders() // Ensure orders are fetched before setting up the subscription
+		// Subscribe to real-time updates
+		const subscription = supabase
+			.channel('orders')
+			.on(
+				'postgres_changes',
+				{ event: '*', schema: 'public', table: 'orders' },
+				(payload) => {
+					console.log('Change received!', payload)
+					fetchOrdersEffect() // Refresh orders on any change
+				},
+			)
+			.subscribe()
 
-			const subscription = supabase
-				.channel('orders')
-				.on(
-					'postgres_changes',
-					{ event: '*', schema: 'public', table: 'orders' }, // Listen to all events
-					(payload) => {
-						if (payload.eventType === 'INSERT') {
-							setOrders((prevOrders) => [payload.new as Order, ...prevOrders])
-						} else if (payload.eventType === 'UPDATE') {
-							setOrders((prevOrders) =>
-								prevOrders.map((order) =>
-									order.id === payload.new.id ? (payload.new as Order) : order,
-								),
-							)
-						} else if (payload.eventType === 'DELETE') {
-							setOrders((prevOrders) =>
-								prevOrders.filter((order) => order.id !== payload.old.id),
-							)
-						}
-					},
-				)
-				.subscribe()
-
-			return () => {
-				supabase.removeChannel(subscription)
-			}
+		// Cleanup subscription on unmount
+		return () => {
+			supabase.removeChannel(subscription)
 		}
-
-		initializeOrders()
-	}, [fetchOrders])
+	}, [])
 
 	return (
 		<Container>
