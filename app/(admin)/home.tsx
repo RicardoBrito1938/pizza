@@ -150,6 +150,7 @@ export default function Home() {
 				onChangeText={setSearchValue}
 				value={searchValue}
 				onClear={handleClear}
+				testID='home-search'
 			/>
 
 			<MenuHeader>
@@ -172,7 +173,6 @@ export default function Home() {
 						paddingTop: 20,
 					}}
 				/>
-
 				{user?.isAdmin && (
 					<Button
 						title='Register pizza'

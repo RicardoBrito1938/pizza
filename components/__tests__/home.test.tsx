@@ -100,44 +100,6 @@ jest.mock('@expo/vector-icons', () => {
 	}
 })
 
-// Mock the Search component to avoid Feather icon issues
-jest.mock('@/components/ui/search', () => {
-	return {
-		// Mock the search component to actually call the onSearch prop
-		Search: function MockSearch(props) {
-			const React = require('react')
-			const { View, TextInput, TouchableOpacity } = require('react-native')
-
-			// Call onSearch in setTimeout to simulate fetching on mount
-			React.useEffect(() => {
-				setTimeout(() => {
-					if (props.onSearch) props.onSearch()
-				}, 0)
-			}, [])
-
-			return React.createElement(View, { testID: 'search-container' }, [
-				React.createElement(TextInput, {
-					key: 'input',
-					testID: 'search-input',
-					value: props.value,
-					onChangeText: props.onChangeText,
-					placeholder: 'search...',
-				}),
-				React.createElement(TouchableOpacity, {
-					key: 'clear',
-					testID: 'search-clear-button',
-					onPress: props.onClear,
-				}),
-				React.createElement(TouchableOpacity, {
-					key: 'search',
-					testID: 'search-button',
-					onPress: props.onSearch,
-				}),
-			])
-		},
-	}
-})
-
 describe('Home Page', () => {
 	beforeEach(() => {
 		jest.clearAllMocks()
@@ -175,19 +137,18 @@ describe('Home Page', () => {
 		expect(mockSignOut).toHaveBeenCalledTimes(1)
 	})
 
-	it('performs search when search button is pressed', async () => {
+	it('performs search when text input changes', async () => {
 		const { getByTestId } = render(<Home />)
 
 		// Clear mocks after initial render triggers search
 		mockSupabaseFrom.mockClear()
 
-		// Enter search text
+		// Enter search text and trigger the useEffect
 		const searchInput = getByTestId('search-input')
 		fireEvent.changeText(searchInput, 'pepperoni')
 
-		// Press search button
-		const searchButton = getByTestId('search-button')
-		fireEvent.press(searchButton)
+		// Advance timers to allow the useEffect to fire
+		jest.advanceTimersByTime(100)
 
 		// Verify search was called
 		expect(mockSupabaseFrom).toHaveBeenCalledWith('pizzas')
@@ -242,11 +203,14 @@ describe('Home Page', () => {
 		const searchInput = getByTestId('search-input')
 		fireEvent.changeText(searchInput, 'pepperoni')
 
+		// Advance timers to allow text change to process
+		jest.advanceTimersByTime(100)
+
 		// Press clear button
 		const clearButton = getByTestId('search-clear-button')
 		fireEvent.press(clearButton)
 
-		// Verify from was called
+		// Verify from was called with empty search
 		expect(mockSupabaseFrom).toHaveBeenCalledWith('pizzas')
 	})
 })

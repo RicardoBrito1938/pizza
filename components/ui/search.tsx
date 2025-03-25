@@ -57,27 +57,18 @@ export const searchTestIDs = {
 
 type Props = WithStyles<TextInputProps> & {
 	onClear: () => void
-	onSearch?: () => void
+	testID?: string
 }
 
-export const Search = ({ onClear, onSearch, ...rest }: Props) => {
+export const Search = ({ onClear, testID, ...rest }: Props) => {
 	return (
-		<Container testID={searchTestIDs.container}>
+		<Container testID={testID || searchTestIDs.container}>
 			<InputArea testID={searchTestIDs.inputArea}>
 				<Input placeholder='search...' testID={searchTestIDs.input} {...rest} />
 				<Clear onPress={onClear} testID={searchTestIDs.clearButton}>
 					<Feather name='x' size={16} testID={searchTestIDs.clearIcon} />
 				</Clear>
 			</InputArea>
-			{onSearch && (
-				<Button onPress={onSearch} testID='search-button'>
-					<Feather
-						name='search'
-						size={16}
-						color={extendedTheme.colors.$title}
-					/>
-				</Button>
-			)}
 		</Container>
 	)
 }
