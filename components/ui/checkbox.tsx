@@ -9,6 +9,11 @@ const CheckboxLabel = styled(Text, {
 	fontFamily: extendedTheme.fonts.$textFont,
 })
 
+const Container = styled(View, {
+	flexDirection: 'row',
+	alignItems: 'center',
+})
+
 type CheckboxProps = {
 	checked: boolean
 	onPress: () => void
@@ -17,13 +22,14 @@ type CheckboxProps = {
 
 export function Checkbox({ checked, onPress, label }: CheckboxProps) {
 	return (
-		<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+		<Container testID='checkbox-container'>
 			<ExpoCheckBox
 				value={checked}
 				onValueChange={onPress}
 				color={checked ? extendedTheme.colors.$secondary900 : undefined}
+				testID='checkbox-input'
 			/>
-			{label && <CheckboxLabel>{label}</CheckboxLabel>}
-		</View>
+			{label && <CheckboxLabel testID='checkbox-label'>{label}</CheckboxLabel>}
+		</Container>
 	)
 }
