@@ -1,21 +1,6 @@
-import { render, fireEvent, act } from '@testing-library/react-native'
+import { render, fireEvent, act, waitFor } from '@testing-library/react-native'
 import OrderDetail from '@/app/order/[id]'
 import { Alert } from 'react-native'
-
-// Mock dependencies
-jest.mock('expo-linear-gradient', () => {
-	const React = require('react')
-	const { View } = require('react-native')
-	return {
-		LinearGradient: jest.fn(({ children, testID }) => {
-			return React.createElement(
-				View,
-				{ testID: testID || 'linear-gradient' },
-				children,
-			)
-		}),
-	}
-})
 
 // Mock the auth hook
 jest.mock('@/hooks/auth', () => ({
@@ -77,11 +62,6 @@ jest.mock('expo-router', () => ({
 	}),
 }))
 
-// Mock react-native-iphone-x-helper
-jest.mock('react-native-iphone-x-helper', () => ({
-	getStatusBarHeight: jest.fn(() => 44),
-}))
-
 // Mock Alert
 jest.spyOn(Alert, 'alert').mockImplementation(() => 0)
 
@@ -99,29 +79,36 @@ describe('Order Detail Page', () => {
 		jest.clearAllMocks()
 	})
 
-	it('renders basic UI elements', () => {
+	it('renders basic UI elements', async () => {
 		const { getByTestId, getByText } = render(<OrderDetail />)
 
-		// Check for basic UI elements
-		expect(getByTestId('button-back-container')).toBeTruthy()
-		expect(getByText('Select your size')).toBeTruthy()
-		expect(getByText('Table Number')).toBeTruthy()
-		expect(getByText('Quantity')).toBeTruthy()
-		expect(getByText('Add')).toBeTruthy()
+		// Wait for the component to load
+		await waitFor(() => {
+			expect(getByTestId('button-back-container')).toBeTruthy()
+			expect(getByText('Select your size')).toBeTruthy()
+			expect(getByText('Table Number')).toBeTruthy()
+			expect(getByText('Quantity')).toBeTruthy()
+			expect(getByText('Add')).toBeTruthy()
+		})
 	})
 
-	it('shows radio buttons for sizes', () => {
+	it('shows radio buttons for sizes', async () => {
 		const { getAllByTestId } = render(<OrderDetail />)
 
-		const radioButtons = getAllByTestId('radio-button-container')
-		expect(radioButtons.length).toBe(3)
+		// Wait for the component to load
+		await waitFor(() => {
+			const radioButtons = getAllByTestId('radio-button-container')
+			expect(radioButtons.length).toBe(3)
+		})
 	})
 
-	it('selects a size when radio button is pressed', () => {
+	it('selects a size when radio button is pressed', async () => {
 		const { getAllByTestId, queryByTestId } = render(<OrderDetail />)
 
-		// Initially no selection indicator
-		expect(queryByTestId('radio-selected-indicator')).toBeFalsy()
+		// Wait for the component to load
+		await waitFor(() => {
+			expect(queryByTestId('radio-selected-indicator')).toBeFalsy()
+		})
 
 		// Press Medium size
 		const radioButtons = getAllByTestId('radio-button-container')
@@ -129,11 +116,13 @@ describe('Order Detail Page', () => {
 			fireEvent.press(radioButtons[1])
 		})
 
-		// Selection indicator should appear
-		expect(queryByTestId('radio-selected-indicator')).toBeTruthy()
+		// Wait for the selection indicator to appear
+		await waitFor(() => {
+			expect(queryByTestId('radio-selected-indicator')).toBeTruthy()
+		})
 	})
 
-	it('shows validation when submitting with missing fields', () => {
+	it('shows validation when submitting with missing fields', async () => {
 		const { getByText } = render(<OrderDetail />)
 
 		// Try to submit without filling anything
@@ -141,11 +130,13 @@ describe('Order Detail Page', () => {
 			fireEvent.press(getByText('Add'))
 		})
 
-		// Should show validation alert
-		expect(Alert.alert).toHaveBeenCalledWith('Order', 'Select a size')
+		// Wait for the validation alert
+		await waitFor(() => {
+			expect(Alert.alert).toHaveBeenCalledWith('Order', 'Select a size')
+		})
 	})
 
-	it('calls supabase when submitting order with all fields', () => {
+	it('calls supabase when submitting order with all fields', async () => {
 		const { getAllByTestId, getByText, getAllByPlaceholderText } = render(
 			<OrderDetail />,
 		)
@@ -170,12 +161,14 @@ describe('Order Detail Page', () => {
 			fireEvent.press(getByText('Add'))
 		})
 
-		// Check that supabase.from was called with 'orders'
-		expect(mockFrom).toHaveBeenCalledWith('orders')
-		expect(mockInsert).toHaveBeenCalled()
+		// Wait for the supabase call
+		await waitFor(() => {
+			expect(mockFrom).toHaveBeenCalledWith('orders')
+			expect(mockInsert).toHaveBeenCalled()
+		})
 	})
 
-	it('goes back when back button is pressed', () => {
+	it('goes back when back button is pressed', async () => {
 		const { getByTestId } = render(<OrderDetail />)
 
 		// Press back button
@@ -183,7 +176,9 @@ describe('Order Detail Page', () => {
 			fireEvent.press(getByTestId('button-back-container'))
 		})
 
-		// Check back function was called
-		expect(mockRouterBack).toHaveBeenCalledTimes(1)
+		// Wait for the back function to be called
+		await waitFor(() => {
+			expect(mockRouterBack).toHaveBeenCalledTimes(1)
+		})
 	})
 })

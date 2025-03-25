@@ -1,4 +1,4 @@
-import { render, waitFor } from '@testing-library/react-native'
+import { render, waitFor, act } from '@testing-library/react-native'
 import Orders from '@/app/(admin)/orders'
 import { Alert } from 'react-native'
 
@@ -31,19 +31,28 @@ const mockOrders = [
 // Mock Alert
 jest.spyOn(Alert, 'alert').mockImplementation(() => 0)
 
-// Improved supabase mock implementation
+// Improved supabase mock with promise resolution
+const mockSubscribe = jest.fn().mockReturnThis()
+const mockOn = jest.fn().mockReturnThis()
+
 const mockChannel = {
-	on: jest.fn().mockReturnThis(),
-	subscribe: jest.fn().mockReturnThis(),
+	on: mockOn,
+	subscribe: mockSubscribe,
 }
 
-const mockFrom = jest.fn(() => ({
+// Resolve the promise with mockOrders data
+const mockSelectResponse = {
+	data: mockOrders,
+	error: null,
+}
+
+const mockFrom = jest.fn().mockImplementation(() => ({
 	select: jest.fn().mockReturnThis(),
 	order: jest.fn().mockReturnThis(),
 	update: jest.fn().mockReturnThis(),
 	eq: jest.fn().mockReturnThis(),
-	data: mockOrders,
-	error: null,
+	// biome-ignore lint/suspicious/noThenProperty: <explanation>
+	then: jest.fn((callback) => Promise.resolve(callback(mockSelectResponse))),
 }))
 
 // This pattern helps avoid the "from is not a function" error
@@ -62,19 +71,24 @@ describe('Orders Page', () => {
 		jest.clearAllMocks()
 	})
 
-	it('renders correctly with orders header', () => {
+	it('renders correctly with orders header', async () => {
+		// Use act to wrap the rendering and ensure the component is mounted
 		const { getByText } = render(<Orders />)
 
-		// Just check the header renders - we'll skip data rendering tests
-		expect(getByText('Orders')).toBeTruthy()
+		// Use waitFor to ensure state updates are complete
+		await waitFor(() => {
+			expect(getByText('Orders')).toBeTruthy()
+		})
 	})
 
-	// Simplified tests that don't depend on complex data fetching
-
-	it('mocks supabase from properly', () => {
+	it('mocks supabase from properly', async () => {
+		// Use act to wrap the rendering
 		render(<Orders />)
 
-		// Verify the supabase mock works - basic test
-		expect(mockFrom).toHaveBeenCalled()
+		// Wait for all promises to resolve
+		await waitFor(() => {
+			// Verify the supabase mock works
+			expect(mockFrom).toHaveBeenCalled()
+		})
 	})
 })

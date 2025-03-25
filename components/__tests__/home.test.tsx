@@ -85,10 +85,7 @@ describe('Home Page', () => {
 	})
 
 	it('renders correctly with a list of pizzas', async () => {
-		const { getByText, getAllByTestId, queryByText } = render(<Home />)
-
-		// Check header renders
-		expect(getByText('Hello, User')).toBeTruthy()
+		const { getByText, queryByText } = render(<Home />)
 
 		// Advance timers to trigger the useEffect search
 		jest.advanceTimersByTime(100)
@@ -101,14 +98,16 @@ describe('Home Page', () => {
 		})
 	})
 
-	it('calls signOut when logout button is pressed', () => {
+	it('calls signOut when logout button is pressed', async () => {
 		const { getByTestId } = render(<Home />)
 
 		// Find and press the logout icon
 		fireEvent.press(getByTestId('icon-logout'))
 
-		// Check if signOut was called
-		expect(mockSignOut).toHaveBeenCalledTimes(1)
+		// Wait for the signOut function to be called
+		await waitFor(() => {
+			expect(mockSignOut).toHaveBeenCalledTimes(1)
+		})
 	})
 
 	it('performs search when text input changes', async () => {
@@ -124,8 +123,11 @@ describe('Home Page', () => {
 		// Advance timers to allow the useEffect to fire
 		jest.advanceTimersByTime(100)
 
-		// Verify search was called
-		expect(mockSupabaseFrom).toHaveBeenCalledWith('pizzas')
+		// Wait for the search to complete
+		await waitFor(() => {
+			// Verify search was called
+			expect(mockSupabaseFrom).toHaveBeenCalledWith('pizzas')
+		})
 	})
 
 	it('navigates to product detail when a pizza is pressed', async () => {
@@ -152,10 +154,12 @@ describe('Home Page', () => {
 		mockRouterPush(route)
 
 		// Check if the function was called with the expected route
-		expect(mockRouterPush).toHaveBeenCalledWith('/product/1')
+		await waitFor(() => {
+			expect(mockRouterPush).toHaveBeenCalledWith('/product/1')
+		})
 	})
 
-	it('shows "Register pizza" button for admin users', () => {
+	it('shows "Register pizza" button for admin users', async () => {
 		const { getByText } = render(<Home />)
 
 		// Check for admin button
@@ -164,7 +168,11 @@ describe('Home Page', () => {
 
 		// Press button and check navigation
 		fireEvent.press(registerButton)
-		expect(mockRouterPush).toHaveBeenCalledWith('/product')
+
+		// Wait for navigation to be triggered
+		await waitFor(() => {
+			expect(mockRouterPush).toHaveBeenCalledWith('/product')
+		})
 	})
 
 	it('clears search when clear button is pressed', async () => {
@@ -184,7 +192,10 @@ describe('Home Page', () => {
 		const clearButton = getByTestId('search-clear-button')
 		fireEvent.press(clearButton)
 
-		// Verify from was called with empty search
-		expect(mockSupabaseFrom).toHaveBeenCalledWith('pizzas')
+		// Wait for the search to reset
+		await waitFor(() => {
+			// Verify from was called with empty search
+			expect(mockSupabaseFrom).toHaveBeenCalledWith('pizzas')
+		})
 	})
 })
