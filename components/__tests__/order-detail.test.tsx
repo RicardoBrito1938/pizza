@@ -45,7 +45,8 @@ const mockFrom = jest.fn().mockImplementation((table) => {
 
 jest.mock('@/utils/supabase', () => ({
 	supabase: {
-		from: (table) => mockFrom(table),
+		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+		from: (table: any) => mockFrom(table),
 	},
 }))
 
