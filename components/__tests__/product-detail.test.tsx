@@ -82,7 +82,7 @@ const mockStorageRemove = jest.fn().mockReturnValue({
 	error: null,
 })
 
-jest.mock('@/utils/supabase', () => ({
+jest.mock('@/supabase/supabase', () => ({
 	supabase: {
 		from: mockSupabaseFrom,
 		storage: {

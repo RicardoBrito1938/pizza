@@ -41,7 +41,7 @@ const mockSupabaseFrom = jest.fn().mockReturnValue({
 })
 
 // Override the mock implementation to provide functioning access to data
-jest.mock('@/utils/supabase', () => {
+jest.mock('@/supabase/supabase', () => {
 	return {
 		supabase: {
 			from: (table) => {

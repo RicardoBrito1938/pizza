@@ -56,7 +56,7 @@ const mockFrom = jest.fn().mockImplementation(() => ({
 }))
 
 // This pattern helps avoid the "from is not a function" error
-jest.mock('@/utils/supabase', () => {
+jest.mock('@/supabase/supabase', () => {
 	return {
 		supabase: {
 			from: (...args) => mockFrom(...args),

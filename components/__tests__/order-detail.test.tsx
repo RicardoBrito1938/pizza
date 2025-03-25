@@ -43,7 +43,7 @@ const mockFrom = jest.fn().mockImplementation((table) => {
 	return { select: mockSelect }
 })
 
-jest.mock('@/utils/supabase', () => ({
+jest.mock('@/supabase/supabase', () => ({
 	supabase: {
 		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		from: (table: any) => mockFrom(table),
