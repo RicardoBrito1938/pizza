@@ -2,11 +2,19 @@ import { render, fireEvent, act, waitFor } from '@testing-library/react-native'
 import OrderDetail from '@/app/order/[id]'
 import { Alert } from 'react-native'
 
-// Mock the auth hook
-jest.mock('@/hooks/auth', () => ({
-	useAuth: () => ({
-		user: { id: 'user123' },
-	}),
+// Mock SWR instead of hooks/auth
+jest.mock('swr', () => ({
+	__esModule: true,
+	default: jest.fn(() => ({
+		data: { id: 'user123' },
+		error: null,
+		isLoading: false,
+	})),
+}))
+
+// Mock fetchUser utility
+jest.mock('@/utils/auth', () => ({
+	fetchUser: jest.fn().mockResolvedValue({ id: 'user123' }),
 }))
 
 // Mock supabase with improved implementation
