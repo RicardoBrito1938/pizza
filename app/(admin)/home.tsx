@@ -1,4 +1,3 @@
-import { useAuth } from '@/hooks/auth'
 import extendedTheme from '@/styles/extendedTheme'
 import { styled } from '@fast-styles/react'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -12,6 +11,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/supabase/supabase'
 import { type Route, useRouter } from 'expo-router'
+import useSWR from 'swr'
+import { fetchUser } from '@/utils/auth'
 
 const Container = styled(View, {
 	flex: 1,
@@ -76,10 +77,21 @@ const Body = styled(View, {
 })
 
 export default function Home() {
-	const { signOut, user } = useAuth()
+	const { data: user, mutate } = useSWR('/user', fetchUser)
 	const routes = useRouter()
 	const [pizzas, setPizzas] = useState<ProductProps[]>([])
 	const [searchValue, setSearchValue] = useState('')
+
+	const handleSignOut = async () => {
+		const { error } = await supabase.auth.signOut()
+		if (error) {
+			Alert.alert('Sign Out Error', error.message || 'Sign out failed')
+			return
+		}
+
+		await mutate(null, false) // Update the SWR cache
+		routes.navigate('/sign-in')
+	}
 
 	const fetchPizzas = useCallback(async (value: string) => {
 		const formattedValue = value.trim().toLowerCase()
@@ -128,10 +140,12 @@ export default function Home() {
 			>
 				<Greeting>
 					<GreetingEmoji source={happyEmoji} />
-					<GreetingText>Hello, User</GreetingText>
+					<GreetingText>
+						Hello, {user?.email?.split('@')[0] || 'User'}
+					</GreetingText>
 				</Greeting>
 				<Pressable
-					onPress={signOut}
+					onPress={handleSignOut}
 					style={({ pressed }) => [
 						{
 							opacity: pressed ? 0.7 : 1,

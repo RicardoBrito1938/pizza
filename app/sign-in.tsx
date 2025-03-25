@@ -8,6 +8,7 @@ import {
 	ScrollView,
 	Text,
 	View,
+	Alert,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import extendedTheme from '@/styles/extendedTheme'
@@ -15,9 +16,11 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { getBottomSpace } from 'react-native-iphone-x-helper'
 import brandImg from '@/assets/images/brand.png'
-import { useAuth } from '@/hooks/auth'
 import { useState } from 'react'
 import { SplashScreen, useRouter } from 'expo-router'
+import { supabase } from '@/supabase/supabase'
+import useSWR from 'swr'
+import { fetchUser } from '@/utils/auth'
 
 const Container = styled(LinearGradient, {
 	flex: 1,
@@ -86,12 +89,50 @@ SplashScreen.preventAutoHideAsync()
 export default function SignIn() {
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
+	const [isLoading, setIsLoading] = useState(false)
 
-	const { signIn, forgotPassword, isLoadingUser } = useAuth()
 	const router = useRouter()
+	const { mutate } = useSWR('/user', fetchUser)
 
-	const handleSignIn = () => {
-		signIn(email, password)
+	const handleForgotPassword = async (email: string) => {
+		if (!email) {
+			Alert.alert('Forgot Password', 'Email is required')
+			return
+		}
+
+		const { error } = await supabase.auth.resetPasswordForEmail(email)
+		if (error) {
+			Alert.alert('Forgot Password', error.message || 'Password reset failed')
+			return
+		}
+
+		Alert.alert('Forgot Password', 'Password reset email sent')
+	}
+
+	const handleSignIn = async () => {
+		setIsLoading(true)
+
+		if (!email || !password) {
+			Alert.alert('Login Error', 'Email and password are required')
+			setIsLoading(false)
+			return
+		}
+
+		const { data: authData, error: authError } =
+			await supabase.auth.signInWithPassword({
+				email,
+				password,
+			})
+
+		if (authError) {
+			Alert.alert('Login Error', authError.message || 'Authentication failed')
+			setIsLoading(false)
+			return
+		}
+
+		await mutate() // Revalidate user data with SWR
+		setIsLoading(false)
+		router.navigate('/(admin)/home')
 	}
 
 	return (
@@ -125,7 +166,7 @@ export default function SignIn() {
 						onChangeText={setPassword}
 						secureTextEntry
 					/>
-					<ForgotPasswordButton onPress={() => forgotPassword(email)}>
+					<ForgotPasswordButton onPress={() => handleForgotPassword(email)}>
 						<ForgotPasswordText>Forgot password?</ForgotPasswordText>
 					</ForgotPasswordButton>
 					<ButtonsContainer>
@@ -133,7 +174,7 @@ export default function SignIn() {
 							title='Sign in'
 							variant='primary'
 							onPress={handleSignIn}
-							loading={isLoadingUser}
+							loading={isLoading}
 						/>
 					</ButtonsContainer>
 					<Pressable onPress={() => router.push('/sign-up')}>

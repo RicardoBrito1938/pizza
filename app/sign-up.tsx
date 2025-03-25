@@ -18,10 +18,12 @@ import {
 	getStatusBarHeight,
 } from 'react-native-iphone-x-helper'
 import brandImg from '@/assets/images/brand.png'
-import { useAuth } from '@/hooks/auth'
 import { useState } from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ButtonBack } from '@/components/ui/button-back'
+import { fetchUser, registerUser } from '@/utils/auth'
+import useSWR from 'swr'
+import { router } from 'expo-router'
 
 const Container = styled(LinearGradient, {
 	flex: 1,
@@ -88,15 +90,20 @@ export default function SignUp() {
 	const [confirmPassword, setConfirmPassword] = useState('')
 	const [isAdmin, setIsAdmin] = useState(false)
 
-	const { register, isLogging } = useAuth()
+	const { mutate } = useSWR('/user', fetchUser)
 
-	const handleSignUp = async () => {
+	const handleRegister = async () => {
 		if (password !== confirmPassword) {
 			Alert.alert('Validation Error', 'Passwords do not match')
 			return
 		}
 
-		await register(email, password, name)
+		const result = await registerUser(email, password, name)
+
+		if (result.success && result.user) {
+			await mutate()
+			router.replace('/(admin)/home')
+		}
 	}
 
 	return (
@@ -159,8 +166,7 @@ export default function SignUp() {
 						<Button
 							title='Sign Up'
 							variant='primary'
-							onPress={handleSignUp}
-							loading={isLogging}
+							onPress={handleRegister}
 							testID='sign-up-button'
 						/>
 					</Content>

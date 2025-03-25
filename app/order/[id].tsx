@@ -20,7 +20,8 @@ import {
 import { getStatusBarHeight } from 'react-native-iphone-x-helper'
 import { supabase } from '@/supabase/supabase'
 import type { ProductProps } from '@/components/ui/product-card'
-import { useAuth } from '@/hooks/auth'
+import { fetchUser } from '@/utils/auth'
+import useSWR from 'swr'
 
 const Container = styled(KeyboardAvoidingView, {
 	flex: 1,
@@ -107,7 +108,7 @@ type PizzaResponse = ProductProps & {
 export default function Order() {
 	const router = useRouter()
 	const { id } = useLocalSearchParams()
-	const { user } = useAuth()
+	const { data: user } = useSWR('/user', fetchUser)
 
 	const [size, setSize] = useState('')
 	const [pizza, setPizza] = useState<PizzaResponse | null>(null)

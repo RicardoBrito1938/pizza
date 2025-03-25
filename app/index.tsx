@@ -1,8 +1,8 @@
-import { useCallback, useEffect } from 'react'
+import { useEffect } from 'react'
 import { View } from 'react-native'
 import * as Animatable from 'react-native-animatable'
 import { SplashScreen as ExpoSplashScreen, useRouter } from 'expo-router'
-import { useAuth } from '@/hooks/auth'
+import useSWR from 'swr'
 import { supabase } from '@/supabase/supabase'
 import { styled } from '@fast-styles/react'
 
@@ -26,39 +26,41 @@ const Text = styled(Animatable.Text, {
 	},
 })
 
+// Define the fetchUser function directly in the splash screen
+const fetchUser = async () => {
+	const { data: session } = await supabase.auth.getSession()
+	if (!session?.session?.user) return null
+
+	const { data: profileData, error: profileError } = await supabase
+		.from('profiles')
+		.select('*')
+		.eq('id', session.session.user.id)
+		.single()
+
+	if (profileError) {
+		throw new Error(profileError.message)
+	}
+
+	return {
+		id: session.session.user.id,
+		email: session.session.user.email || null,
+		isAdmin: profileData.is_admin,
+	}
+}
+
 export default function SplashScreen() {
 	const router = useRouter()
-	const { setUser } = useAuth()
-
-	const fetchSessionAndNavigate = useCallback(async () => {
-		const { data, error } = await supabase.auth.getSession()
-		if (error || !data?.session?.user) {
-			return router.replace('/sign-in')
-		}
-
-		const session = data.session
-
-		const { data: profileData, error: profileError } = await supabase
-			.from('profiles')
-			.select('*')
-			.eq('id', session.user.id)
-			.single()
-
-		if (profileError) {
-			console.error('Error fetching profile:', profileError)
-			return router.replace('/sign-in')
-		}
-		setUser({
-			id: session.user.id,
-			email: session.user.email || null,
-			isAdmin: profileData.is_admin,
-		})
-		router.replace('/(admin)/home')
-	}, [setUser, router])
+	const { data: user, error, isLoading } = useSWR('/user', fetchUser)
 
 	useEffect(() => {
-		fetchSessionAndNavigate()
-	}, [fetchSessionAndNavigate])
+		if (isLoading) return
+
+		if (!user || error) {
+			router.replace('/sign-in')
+		} else {
+			router.replace('/(admin)/home')
+		}
+	}, [user, isLoading, router, error])
 
 	return (
 		<Container>
