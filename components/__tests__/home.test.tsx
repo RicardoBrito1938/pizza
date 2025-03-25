@@ -138,32 +138,6 @@ jest.mock('@/components/ui/search', () => {
 	}
 })
 
-// Mock ProductCard to simplify tests but make it actually render pizza items
-jest.mock('@/components/ui/product-card', () => {
-	return {
-		ProductCard: function MockProductCard(props) {
-			const React = require('react')
-			const { TouchableOpacity, Text, View } = require('react-native')
-
-			// Create a container first
-			return React.createElement(View, { testID: 'product-card-container' }, [
-				React.createElement(
-					TouchableOpacity,
-					{
-						key: 'content',
-						testID: 'product-card-content',
-						onPress: () => props.onPress(),
-					},
-					[
-						React.createElement(Text, { key: 'name' }, props.data.name),
-						React.createElement(Text, { key: 'desc' }, props.data.description),
-					],
-				),
-			])
-		},
-	}
-})
-
 describe('Home Page', () => {
 	beforeEach(() => {
 		jest.clearAllMocks()
