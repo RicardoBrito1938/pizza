@@ -7,7 +7,7 @@ import {
 } from 'react'
 import { Alert } from 'react-native'
 import { SplashScreen, useRouter } from 'expo-router'
-import { supabase } from '@/utils/supabase'
+import { supabase } from '@/supabase/supabase'
 
 type User = {
 	id: string

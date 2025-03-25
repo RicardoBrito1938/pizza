@@ -22,7 +22,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { InputPrice } from '@/components/ui/input-price'
 import { Input } from '@/components/ui/input'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { supabase } from '@/utils/supabase'
+import { supabase } from '@/supabase/supabase'
 
 const Container = styled(KeyboardAvoidingView, {
 	flex: 1,

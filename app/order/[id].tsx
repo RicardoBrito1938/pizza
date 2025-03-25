@@ -18,7 +18,7 @@ import {
 	View,
 } from 'react-native'
 import { getStatusBarHeight } from 'react-native-iphone-x-helper'
-import { supabase } from '@/utils/supabase'
+import { supabase } from '@/supabase/supabase'
 import type { ProductProps } from '@/components/ui/product-card'
 import { useAuth } from '@/hooks/auth'
 

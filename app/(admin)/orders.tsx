@@ -5,7 +5,7 @@ import { styled } from '@fast-styles/react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Alert, FlatList, Text, View } from 'react-native'
 import { useCallback, useEffect, useState } from 'react'
-import { supabase } from '@/utils/supabase'
+import { supabase } from '@/supabase/supabase'
 import { getStatusBarHeight } from 'react-native-iphone-x-helper'
 
 const Container = styled(View, {

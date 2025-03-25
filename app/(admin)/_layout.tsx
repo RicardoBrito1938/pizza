@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router'
 import extendedTheme from '@/styles/extendedTheme'
 import { BottomMenu } from '@/components/ui/bottom-menu'
 import { useState, useEffect } from 'react'
-import { supabase } from '@/utils/supabase'
+import { supabase } from '@/supabase/supabase'
 
 export default function TabLayout() {
 	const [notifications, setNotifications] = useState(0)

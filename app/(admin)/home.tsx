@@ -10,7 +10,7 @@ import { Search } from '@/components/ui/search'
 import { ProductCard, type ProductProps } from '@/components/ui/product-card'
 import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { supabase } from '@/utils/supabase'
+import { supabase } from '@/supabase/supabase'
 import { type Route, useRouter } from 'expo-router'
 
 const Container = styled(View, {
