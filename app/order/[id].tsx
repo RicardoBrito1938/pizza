@@ -121,35 +121,35 @@ export default function Order() {
 			: '0.00'
 
 	useEffect(() => {
-		const fetchPizza = async () => {
-			try {
-				const { data, error } = await supabase
-					.from('pizzas')
-					.select('*')
-					.eq('id', id)
-					.single()
-
-				if (error) {
-					throw error
-				}
-
-				// Transform the fetched data to include a price_sizes object
-				const transformedData = {
-					...data,
-					price_sizes: {
-						S: data.price_size_s,
-						M: data.price_size_m,
-						L: data.price_size_l,
-					},
-				}
-
-				setPizza(transformedData as PizzaResponse)
-			} catch (error) {
-				Alert.alert('Error', 'An error occurred while fetching pizza')
-			}
-		}
-
 		if (id) {
+			const fetchPizza = async () => {
+				try {
+					const { data, error } = await supabase
+						.from('pizzas')
+						.select('*')
+						.eq('id', id)
+						.single()
+
+					if (error) {
+						throw error
+					}
+
+					// Transform the fetched data to include a price_sizes object
+					const transformedData = {
+						...data,
+						price_sizes: {
+							S: data.price_size_s,
+							M: data.price_size_m,
+							L: data.price_size_l,
+						},
+					}
+
+					setPizza(transformedData as PizzaResponse)
+				} catch (error) {
+					Alert.alert('Error', 'An error occurred while fetching pizza')
+				}
+			}
+
 			fetchPizza()
 		}
 	}, [id])
@@ -168,9 +168,9 @@ export default function Order() {
 			return
 		}
 
-		setSendingOrder(true)
-
 		try {
+			setSendingOrder(true)
+
 			const order = {
 				quantity,
 				amount,

@@ -85,16 +85,13 @@ export default function Home() {
 		const formattedValue = value.trim().toLowerCase()
 
 		try {
-			let query = supabase.from('pizzas').select('*')
-
-			if (formattedValue) {
-				query = query.ilike('name', `%${formattedValue}%`)
-			}
-
-			const { data, error } = await query
+			const { data, error } = await supabase
+				.from('pizzas')
+				.select('*')
+				.ilike('name', `%${formattedValue}%`)
 
 			if (error) {
-				throw new Error(error.message)
+				throw error
 			}
 
 			setPizzas(data as ProductProps[])

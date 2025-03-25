@@ -91,6 +91,27 @@ export default function Orders() {
 	}
 
 	useEffect(() => {
+		const fetchOrdersEffect = async () => {
+			try {
+				const { data, error } = await supabase
+					.from('orders')
+					.select('*')
+					.order('created_at', { ascending: false })
+
+				if (error) {
+					throw error
+				}
+
+				setOrders(data as Order[])
+			} catch (error) {
+				console.error('Error fetching orders:', error)
+			}
+		}
+
+		fetchOrdersEffect()
+	}, [])
+
+	useEffect(() => {
 		const initializeOrders = async () => {
 			await fetchOrders() // Ensure orders are fetched before setting up the subscription
 
