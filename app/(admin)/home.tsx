@@ -6,13 +6,14 @@ import { getStatusBarHeight } from 'react-native-iphone-x-helper'
 import happyEmoji from '@/assets/images/happy.png'
 import { MaterialIcons } from '@expo/vector-icons'
 import { Search } from '@/components/ui/search'
-import { ProductCard, type ProductProps } from '@/components/ui/product-card'
-import { useCallback, useEffect, useState } from 'react'
+import { ProductCard } from '@/components/ui/product-card'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/supabase/supabase'
 import { type Route, useRouter } from 'expo-router'
 import useSWR from 'swr'
 import { fetchUser } from '@/utils/auth'
+import { fetchPizzas } from '@/utils/api'
 
 const Container = styled(View, {
 	flex: 1,
@@ -77,10 +78,19 @@ const Body = styled(View, {
 })
 
 export default function Home() {
-	const { data: user, mutate } = useSWR('/user', fetchUser)
-	const routes = useRouter()
-	const [pizzas, setPizzas] = useState<ProductProps[]>([])
+	const { data: user, mutate: mutateUser } = useSWR('/user', fetchUser)
+	const router = useRouter()
 	const [searchValue, setSearchValue] = useState('')
+
+	// Using SWR to fetch pizzas with the search value as a key
+	const { data: pizzas = [], mutate: mutatePizzas } = useSWR(
+		['pizzas', searchValue],
+		() => fetchPizzas(searchValue),
+		{
+			revalidateOnFocus: true,
+			dedupingInterval: 2000,
+		},
+	)
 
 	const handleSignOut = async () => {
 		const { error } = await supabase.auth.signOut()
@@ -89,46 +99,22 @@ export default function Home() {
 			return
 		}
 
-		await mutate(null, false) // Update the SWR cache
-		routes.navigate('/sign-in')
+		await mutateUser(null, false) // Update the SWR cache
+		router.navigate('/sign-in')
 	}
-
-	const fetchPizzas = useCallback(async (value: string) => {
-		const formattedValue = value.trim().toLowerCase()
-
-		try {
-			const { data, error } = await supabase
-				.from('pizzas')
-				.select('*')
-				.ilike('name', `%${formattedValue}%`)
-
-			if (error) {
-				throw error
-			}
-
-			setPizzas(data as ProductProps[])
-		} catch (error) {
-			Alert.alert('Error', 'An error occurred while fetching pizzas')
-		}
-	}, [])
 
 	const handleClear = () => {
 		setSearchValue('')
-		fetchPizzas('')
 	}
 
 	const handleOpenProduct = (id: string) => {
 		const route = user?.isAdmin ? `/product/${id}` : `/order/${id}`
-		routes.push(route as Route)
+		router.push(route as Route)
 	}
 
 	const HandleAdd = () => {
-		routes.push('/product')
+		router.push('/product')
 	}
-
-	useEffect(() => {
-		fetchPizzas(searchValue)
-	}, [searchValue, fetchPizzas])
 
 	return (
 		<Container>

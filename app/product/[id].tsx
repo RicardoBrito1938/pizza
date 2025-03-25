@@ -23,6 +23,8 @@ import { InputPrice } from '@/components/ui/input-price'
 import { Input } from '@/components/ui/input'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { supabase } from '@/supabase/supabase'
+import useSWR, { mutate } from 'swr'
+import { fetchPizzaById } from '@/utils/api'
 
 const Container = styled(KeyboardAvoidingView, {
 	flex: 1,
@@ -100,15 +102,18 @@ const GhostView = styled(View, {
 export default function Product() {
 	const { id } = useLocalSearchParams()
 	const router = useRouter()
+	const pizzaId = id ? String(id) : null
 
-	const [image, setImage] = useState<string | null>(null)
-	const [imagePath, setImagePath] = useState<string | null>(null)
-	const [name, setName] = useState<string>('')
-	const [description, setDescription] = useState<string>('')
-	const [priceSizeP, setPriceSizeP] = useState<string>('')
-	const [priceSizeM, setPriceSizeM] = useState<string>('')
-	const [priceSizeG, setPriceSizeG] = useState<string>('')
-	const [loading, setLoading] = useState<boolean>(false)
+	const { data: pizza } = useSWR(pizzaId ? `pizza/${pizzaId}` : null, () =>
+		fetchPizzaById(pizzaId as string),
+	)
+
+	// Keep only the temporary image state for new uploads
+	const [tempImage, setTempImage] = useState<string | null>(null)
+	const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+
+	// Get the current image to display - either from the temporary upload or from the pizza data
+	const currentImage = tempImage || pizza?.photo_url || null
 
 	const handleImagePick = async () => {
 		const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
@@ -126,30 +131,30 @@ export default function Product() {
 		})
 
 		if (!result.canceled) {
-			setImage(result.assets[0].uri)
+			setTempImage(result.assets[0].uri)
 		}
 	}
 
 	const handleAddPizza = async () => {
 		if (
-			!image ||
-			!name.trim() ||
-			!description.trim() ||
-			!priceSizeP ||
-			!priceSizeM ||
-			!priceSizeG
+			!currentImage ||
+			!pizza?.name.trim() ||
+			!pizza?.description.trim() ||
+			!pizza?.price_size_s ||
+			!pizza?.price_size_m ||
+			!pizza?.price_size_l
 		) {
 			Alert.alert('Validation Error', 'Please fill all fields')
 			return
 		}
 
-		setLoading(true)
+		setIsSubmitting(true)
 
 		try {
-			const fileExt = image.split('.').pop()
-			const fileName = `${Date.now()}-${name.replace(/\s+/g, '-')}.${fileExt}`
+			const fileExt = currentImage.split('.').pop()
+			const fileName = `${Date.now()}-${pizza.name.replace(/\s+/g, '-')}.${fileExt}`
 
-			const fileUri = image
+			const fileUri = currentImage
 			const fileType = mime.lookup(fileUri) || 'image/jpeg'
 
 			const formData = new FormData()
@@ -178,11 +183,11 @@ export default function Product() {
 			const photoUrl = publicUrlData.publicUrl
 
 			const { error: insertError } = await supabase.from('pizzas').insert({
-				name,
-				description,
-				price_size_s: Number.parseFloat(priceSizeP),
-				price_size_m: Number.parseFloat(priceSizeM),
-				price_size_l: Number.parseFloat(priceSizeG),
+				name: pizza.name,
+				description: pizza.description,
+				price_size_s: Number.parseFloat(String(pizza.price_size_s)),
+				price_size_m: Number.parseFloat(String(pizza.price_size_m)),
+				price_size_l: Number.parseFloat(String(pizza.price_size_l)),
 				photo_url: photoUrl,
 				photo_path: fileName,
 			})
@@ -192,13 +197,19 @@ export default function Product() {
 				return
 			}
 
+			// Invalidate the pizzas cache to refresh the list
+			mutate(
+				(key) => typeof key === 'string' && key.startsWith('pizzas'),
+				undefined,
+				{ revalidate: true },
+			)
 			Alert.alert('Success', 'Pizza added successfully!')
 			router.back()
 		} catch (error) {
 			console.error('Unexpected error:', error)
 			Alert.alert('Error', 'Something went wrong.')
 		} finally {
-			setLoading(false)
+			setIsSubmitting(false)
 		}
 	}
 
@@ -208,7 +219,7 @@ export default function Product() {
 			return
 		}
 
-		setLoading(true)
+		setIsSubmitting(true) // Use the renamed state
 
 		try {
 			const { data: pizzaData, error: fetchError } = await supabase
@@ -233,71 +244,32 @@ export default function Product() {
 				}
 			}
 
-			console.log('Trying to delete pizza with id:', id, typeof id)
-
 			const formattedId = String(id).trim()
-			console.log('Formatted ID used for deletion:', formattedId)
 
-			const {
-				error: deletePizzaError,
-				data,
-				status,
-			} = await supabase.from('pizzas').delete().eq('id', formattedId)
-
-			console.log('Delete status:', status)
-			console.log('Delete data:', data)
-			console.log('Delete error:', deletePizzaError)
+			const { error: deletePizzaError } = await supabase
+				.from('pizzas')
+				.delete()
+				.eq('id', formattedId)
 
 			if (deletePizzaError) {
 				throw new Error(`Failed to delete pizza: ${deletePizzaError.message}`)
 			}
 
+			// Invalidate the pizzas cache to refresh the list
+			mutate(
+				(key) => typeof key === 'string' && key.startsWith('pizzas'),
+				undefined,
+				{ revalidate: true },
+			)
 			Alert.alert('Success', 'Pizza deleted successfully!')
 			router.back()
 		} catch (error: any) {
 			console.error('Delete error:', error)
 			Alert.alert('Error', error.message || 'Something went wrong.')
 		} finally {
-			setLoading(false)
+			setIsSubmitting(false) // Use the renamed state
 		}
 	}
-
-	const fetchPizza = useCallback(async () => {
-		if (!id) return
-
-		try {
-			const { data: pizzaData, error } = await supabase
-				.from('pizzas')
-				.select('*')
-				.eq('id', id)
-				.single()
-
-			if (error) {
-				throw new Error(error.message)
-			}
-
-			return pizzaData
-		} catch (error) {
-			Alert.alert('Error', `Pizza not found: ${error}`)
-			return null
-		}
-	}, [id])
-
-	useEffect(() => {
-		if (!id) return // No ID means we're creating a new product
-
-		fetchPizza().then((pizzaData) => {
-			if (pizzaData) {
-				setName(pizzaData.name)
-				setDescription(pizzaData.description)
-				setImage(pizzaData.photo_url)
-				setImagePath(pizzaData.photo_path)
-				setPriceSizeP(pizzaData.price_sizes?.S)
-				setPriceSizeM(pizzaData.price_sizes?.M)
-				setPriceSizeG(pizzaData.price_sizes?.L)
-			}
-		})
-	}, [id, fetchPizza])
 
 	return (
 		<Container behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -320,7 +292,7 @@ export default function Product() {
 				</Header>
 
 				<Upload>
-					<Photo uri={image} />
+					<Photo uri={currentImage} />
 					{!id && (
 						<PickImageButton
 							title='Pick'
@@ -333,7 +305,13 @@ export default function Product() {
 				<Form>
 					<InputGroup>
 						<Label>Name</Label>
-						<Input value={name} onChangeText={setName} />
+						<Input
+							value={pizza?.name || ''}
+							onChangeText={(text) => {
+								if (pizza)
+									mutate(`pizza/${pizzaId}`, { ...pizza, name: text }, false)
+							}}
+						/>
 					</InputGroup>
 
 					<InputGroup>
@@ -346,8 +324,15 @@ export default function Product() {
 							multiline
 							maxLength={60}
 							style={{ height: 80 }}
-							value={description}
-							onChangeText={setDescription}
+							value={pizza?.description || ''}
+							onChangeText={(text) => {
+								if (pizza)
+									mutate(
+										`pizza/${pizzaId}`,
+										{ ...pizza, description: text },
+										false,
+									)
+							}}
 						/>
 					</InputGroup>
 
@@ -355,18 +340,39 @@ export default function Product() {
 						<Label>Sizes and prices</Label>
 						<InputPrice
 							size='S'
-							value={priceSizeP}
-							onChangeText={setPriceSizeP}
+							value={pizza?.price_size_s ? String(pizza.price_size_s) : ''}
+							onChangeText={(text) => {
+								if (pizza)
+									mutate(
+										`pizza/${pizzaId}`,
+										{ ...pizza, price_size_s: text },
+										false,
+									)
+							}}
 						/>
 						<InputPrice
 							size='M'
-							value={priceSizeM}
-							onChangeText={setPriceSizeM}
+							value={pizza?.price_size_m ? String(pizza.price_size_m) : ''}
+							onChangeText={(text) => {
+								if (pizza)
+									mutate(
+										`pizza/${pizzaId}`,
+										{ ...pizza, price_size_m: text },
+										false,
+									)
+							}}
 						/>
 						<InputPrice
 							size='L'
-							value={priceSizeG}
-							onChangeText={setPriceSizeG}
+							value={pizza?.price_size_l ? String(pizza.price_size_l) : ''}
+							onChangeText={(text) => {
+								if (pizza)
+									mutate(
+										`pizza/${pizzaId}`,
+										{ ...pizza, price_size_l: text },
+										false,
+									)
+							}}
 						/>
 					</InputGroup>
 
@@ -374,7 +380,7 @@ export default function Product() {
 						<Button
 							title='Register pizza'
 							variant='secondary'
-							loading={loading}
+							loading={isSubmitting} // Use the renamed state
 							onPress={handleAddPizza}
 						/>
 					)}

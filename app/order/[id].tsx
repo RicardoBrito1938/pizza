@@ -7,7 +7,7 @@ import { PIZZA_TYPES } from '@/utils/pizza-types'
 import { styled } from '@fast-styles/react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
 	Alert,
 	Image,
@@ -19,9 +19,10 @@ import {
 } from 'react-native'
 import { getStatusBarHeight } from 'react-native-iphone-x-helper'
 import { supabase } from '@/supabase/supabase'
-import type { ProductProps } from '@/components/ui/product-card'
 import { fetchUser } from '@/utils/auth'
 import useSWR from 'swr'
+import { fetchPizzaById } from '@/utils/api'
+import type { ProductProps } from '@/components/ui/product-card'
 
 const Container = styled(KeyboardAvoidingView, {
 	flex: 1,
@@ -108,10 +109,14 @@ type PizzaResponse = ProductProps & {
 export default function Order() {
 	const router = useRouter()
 	const { id } = useLocalSearchParams()
+	const pizzaId = id ? String(id) : ''
+
 	const { data: user } = useSWR('/user', fetchUser)
+	const { data: pizza } = useSWR(pizzaId ? `pizza/${pizzaId}` : null, () =>
+		fetchPizzaById(pizzaId),
+	)
 
 	const [size, setSize] = useState('')
-	const [pizza, setPizza] = useState<PizzaResponse | null>(null)
 	const [quantity, setQuantity] = useState(0)
 	const [tableNumber, setTableNumber] = useState('0')
 	const [sendingOrder, setSendingOrder] = useState(false)
@@ -120,40 +125,6 @@ export default function Order() {
 		size && pizza?.price_sizes && pizza.price_sizes[size]
 			? pizza.price_sizes[size] * quantity
 			: '0.00'
-
-	useEffect(() => {
-		if (id) {
-			const fetchPizza = async () => {
-				try {
-					const { data, error } = await supabase
-						.from('pizzas')
-						.select('*')
-						.eq('id', id)
-						.single()
-
-					if (error) {
-						throw error
-					}
-
-					// Transform the fetched data to include a price_sizes object
-					const transformedData = {
-						...data,
-						price_sizes: {
-							S: data.price_size_s,
-							M: data.price_size_m,
-							L: data.price_size_l,
-						},
-					}
-
-					setPizza(transformedData as PizzaResponse)
-				} catch (error) {
-					Alert.alert('Error', 'An error occurred while fetching pizza')
-				}
-			}
-
-			fetchPizza()
-		}
-	}, [id])
 
 	const handleOrder = async () => {
 		if (!size) {
@@ -189,8 +160,20 @@ export default function Order() {
 				throw error
 			}
 
+			// Trigger a revalidation of the orders cache
+			// But don't use direct mutate import
+			if (typeof window !== 'undefined') {
+				// Clear or update existing cache entries
+				// without using external mutate
+				if (useSWR.cache) {
+					// These keys match the ones in our SWR hooks
+					useSWR.cache.delete('orders')
+					useSWR.cache.delete('notifications')
+				}
+			}
+
 			Alert.alert('Order', 'Order placed successfully!')
-			router.push('/home') // Navigate back to home after placing the order
+			router.push('/home')
 		} catch (error) {
 			Alert.alert('Order', 'An error occurred while placing the order')
 			console.error('Error adding order:', error)
@@ -251,7 +234,7 @@ export default function Order() {
 
 					<Price>${amount}</Price>
 
-					<Button title='Add' onPress={handleOrder} />
+					<Button title='Add' onPress={handleOrder} loading={sendingOrder} />
 				</Form>
 			</ContentScroll>
 		</Container>

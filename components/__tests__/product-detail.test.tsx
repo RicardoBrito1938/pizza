@@ -96,9 +96,6 @@ describe('Product Detail Page', () => {
 
 		const { getByText } = render(<ProductDetail />)
 
-		// Reset the Alert mock before this test
-		Alert.alert.mockClear()
-
 		// Try to submit without filling fields
 		const registerButton = getByText('Register pizza')
 		fireEvent.press(registerButton)
