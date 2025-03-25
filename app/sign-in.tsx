@@ -87,7 +87,7 @@ export default function SignIn() {
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
 
-	const { signIn, isLogging, forgotPassword } = useAuth()
+	const { signIn, isLoadingUser, forgotPassword } = useAuth()
 	const router = useRouter()
 
 	const handleSignIn = () => {
@@ -133,7 +133,7 @@ export default function SignIn() {
 							title='Sign in'
 							variant='primary'
 							onPress={handleSignIn}
-							loading={isLogging}
+							loading={isLoadingUser}
 						/>
 					</ButtonsContainer>
 					<Pressable onPress={() => router.push('/sign-up')}>

@@ -2,11 +2,10 @@ import {
 	createContext,
 	useContext,
 	useState,
-	useEffect,
 	type PropsWithChildren,
 } from 'react'
 import { Alert } from 'react-native'
-import { SplashScreen, useRouter } from 'expo-router'
+import { useRouter } from 'expo-router'
 import { supabase } from '@/supabase/supabase'
 
 type User = {
@@ -18,11 +17,9 @@ type User = {
 type AuthContextData = {
 	signIn: (email: string, password: string) => void
 	signOut: () => void
-	isLogging: boolean
 	user: User | null
 	isLoadingUser: boolean
 	forgotPassword: (email: string) => void
-	setIsLoadingUser: (isLoading: boolean) => void
 	setUser: (user: User | null) => void
 	register: (
 		email: string,
@@ -149,12 +146,10 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 				signOut,
 				signIn,
 				register,
-				isLogging,
 				user,
 				setUser,
 				isLoadingUser,
 				forgotPassword,
-				setIsLoadingUser,
 			}}
 		>
 			{children}
