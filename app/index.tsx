@@ -33,7 +33,6 @@ export default function SplashScreen() {
 	const fetchSessionAndNavigate = useCallback(async () => {
 		const { data, error } = await supabase.auth.getSession()
 		if (error || !data?.session?.user) {
-			console.error('Failed to fetch session:', error)
 			return router.replace('/sign-in')
 		}
 

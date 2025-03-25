@@ -87,7 +87,7 @@ export default function SignIn() {
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
 
-	const { signIn, isLoadingUser, forgotPassword } = useAuth()
+	const { signIn, forgotPassword, isLoadingUser } = useAuth()
 	const router = useRouter()
 
 	const handleSignIn = () => {

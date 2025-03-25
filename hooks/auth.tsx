@@ -31,13 +31,12 @@ type AuthContextData = {
 const AuthContext = createContext<AuthContextData>({} as AuthContextData)
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
-	const [isLogging, setIsLogging] = useState(false)
 	const [user, setUser] = useState<User | null>(null)
-	const [isLoadingUser, setIsLoadingUser] = useState(true)
+	const [isLoadingUser, setIsLoadingUser] = useState(false)
 	const router = useRouter()
 
 	const signIn = async (email: string, password: string) => {
-		setIsLogging(true)
+		setIsLoadingUser(true)
 
 		if (!email || !password) {
 			Alert.alert('Login Error', 'Email and password are required')
@@ -52,7 +51,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
 		if (authError) {
 			Alert.alert('Login Error', authError.message || 'Authentication failed')
-			setIsLogging(false)
+			setIsLoadingUser(false)
 			return
 		}
 
@@ -67,7 +66,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 				'Login Error',
 				profileError.message || 'Authentication failed',
 			)
-			setIsLogging(false)
+			setIsLoadingUser(false)
 			return
 		}
 
@@ -76,7 +75,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 			email: authData.user.email || null,
 			isAdmin: profileData.is_admin,
 		})
-		setIsLogging(false)
+		setIsLoadingUser(false)
 
 		router.navigate('/(admin)/home')
 	}
