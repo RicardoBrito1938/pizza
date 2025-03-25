@@ -7,6 +7,7 @@ import {
 	Text,
 	View,
 	SafeAreaView,
+	Alert,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import extendedTheme from '@/styles/extendedTheme'
@@ -91,7 +92,7 @@ export default function SignUp() {
 
 	const handleSignUp = async () => {
 		if (password !== confirmPassword) {
-			alert('Passwords do not match')
+			Alert.alert('Validation Error', 'Passwords do not match')
 			return
 		}
 
@@ -153,13 +154,14 @@ export default function SignUp() {
 								checked={isAdmin}
 								onPress={() => setIsAdmin(!isAdmin)}
 							/>
-							<CheckboxLabel>Admin</CheckboxLabel>
+							<CheckboxLabel testID='checkbox-label'>Admin</CheckboxLabel>
 						</CheckboxContainer>
 						<Button
 							title='Sign Up'
 							variant='primary'
 							onPress={handleSignUp}
 							loading={isLogging}
+							testID='sign-up-button'
 						/>
 					</Content>
 				</KeyboardAvoidingView>

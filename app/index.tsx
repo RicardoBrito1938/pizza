@@ -83,7 +83,7 @@ const SignUpText = styled(Text, {
 
 SplashScreen.preventAutoHideAsync()
 
-export default function RootLayout() {
+export default function SignIn() {
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
 

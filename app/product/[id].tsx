@@ -5,7 +5,7 @@ import extendedTheme from '@/styles/extendedTheme'
 import { styled } from '@fast-styles/react'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as FileSystem from 'expo-file-system'
-import * as mime from 'react-native-mime-types' // optional for getting mime type
+import * as mime from 'react-native-mime-types'
 
 import {
 	Alert,
@@ -139,7 +139,7 @@ export default function Product() {
 			!priceSizeM ||
 			!priceSizeG
 		) {
-			alert('Please fill all fields')
+			Alert.alert('Validation Error', 'Please fill all fields')
 			return
 		}
 
@@ -167,7 +167,7 @@ export default function Product() {
 
 			if (error) {
 				console.error('Upload error:', error)
-				alert('Image upload failed.')
+				Alert.alert('Error', 'Image upload failed.')
 				return
 			}
 
@@ -188,15 +188,15 @@ export default function Product() {
 			})
 
 			if (insertError) {
-				alert(`Error saving pizza: ${insertError.message}`)
+				Alert.alert('Error', `Error saving pizza: ${insertError.message}`)
 				return
 			}
 
-			alert('Pizza added successfully!')
+			Alert.alert('Success', 'Pizza added successfully!')
 			router.back()
 		} catch (error) {
 			console.error('Unexpected error:', error)
-			alert('Something went wrong.')
+			Alert.alert('Error', 'Something went wrong.')
 		} finally {
 			setLoading(false)
 		}
@@ -204,7 +204,7 @@ export default function Product() {
 
 	const handleDeletePizza = async () => {
 		if (!id) {
-			alert('Pizza ID is missing.')
+			Alert.alert('Error', 'Pizza ID is missing.')
 			return
 		}
 
@@ -252,11 +252,11 @@ export default function Product() {
 				throw new Error(`Failed to delete pizza: ${deletePizzaError.message}`)
 			}
 
-			alert('Pizza deleted successfully!')
+			Alert.alert('Success', 'Pizza deleted successfully!')
 			router.back()
 		} catch (error: any) {
 			console.error('Delete error:', error)
-			alert(error.message || 'Something went wrong.')
+			Alert.alert('Error', error.message || 'Something went wrong.')
 		} finally {
 			setLoading(false)
 		}
