@@ -22,6 +22,7 @@ type AuthContextData = {
 	user: User | null
 	isLoadingUser: boolean
 	forgotPassword: (email: string) => void
+	setIsLoadingUser: (isLoading: boolean) => void
 	setUser: (user: User | null) => void
 	register: (
 		email: string,
@@ -79,6 +80,8 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 			isAdmin: profileData.is_admin,
 		})
 		setIsLogging(false)
+
+		router.navigate('/(admin)/home')
 	}
 
 	const signOut = async () => {
@@ -87,7 +90,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 			Alert.alert('Sign Out Error', error.message || 'Sign out failed')
 			return
 		}
-		router.navigate('/')
+		router.navigate('/sign-in')
 	}
 
 	const forgotPassword = async (email: string) => {
@@ -140,50 +143,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 		return { success: false, user: null }
 	}
 
-	useEffect(() => {
-		const fetchSession = async () => {
-			const { data, error } = await supabase.auth.getSession()
-			if (error) {
-				console.error('Failed to fetch session:', error)
-				setUser(null)
-				setIsLoadingUser(false)
-				return
-			}
-
-			const session = data.session
-			if (session?.user) {
-				const { data: profileData, error: profileError } = await supabase
-					.from('profiles')
-					.select('*')
-					.eq('id', session.user.id)
-					.single()
-
-				if (profileError) {
-					console.error('Error fetching profile:', profileError)
-					setUser(null)
-				} else {
-					setUser({
-						id: session.user.id,
-						email: session.user.email || null,
-						isAdmin: profileData.is_admin,
-					})
-				}
-			} else {
-				setUser(null)
-			}
-			setIsLoadingUser(false)
-		}
-
-		fetchSession()
-	}, [])
-
-	useEffect(() => {
-		if (user && !isLoadingUser && !isLogging) {
-			router.replace('/(admin)/home')
-			SplashScreen.hideAsync()
-		}
-	}, [user, router, isLoadingUser, isLogging])
-
 	return (
 		<AuthContext.Provider
 			value={{
@@ -195,6 +154,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 				setUser,
 				isLoadingUser,
 				forgotPassword,
+				setIsLoadingUser,
 			}}
 		>
 			{children}
