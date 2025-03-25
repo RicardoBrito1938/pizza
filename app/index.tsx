@@ -12,7 +12,7 @@ const Container = styled(View, {
 	flex: 1,
 	justifyContent: 'center',
 	alignItems: 'center',
-	backgroundColor: '#FF6347',
+	backgroundColor: 'tomato',
 })
 
 const Text = styled(Animatable.Text, {
