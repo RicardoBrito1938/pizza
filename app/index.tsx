@@ -32,16 +32,12 @@ export default function SplashScreen() {
 
 	const fetchSessionAndNavigate = useCallback(async () => {
 		const { data, error } = await supabase.auth.getSession()
-		if (error) {
+		if (error || !data?.session?.user) {
 			console.error('Failed to fetch session:', error)
 			return router.replace('/sign-in')
 		}
 
 		const session = data.session
-
-		if (!session?.user) {
-			return router.replace('/sign-in')
-		}
 
 		const { data: profileData, error: profileError } = await supabase
 			.from('profiles')
