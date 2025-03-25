@@ -15,6 +15,11 @@ const Container = styled(View, {
 	alignItems: 'center',
 	marginTop: -30,
 	paddingHorizontal: 24,
+	shadowColor: '#000',
+	shadowOffset: { width: 0, height: 2 },
+	shadowOpacity: 0.25,
+	shadowRadius: 3.84,
+	elevation: 5,
 })
 
 const InputArea = styled(View, {
