@@ -2,20 +2,7 @@ import { render, fireEvent } from '@testing-library/react-native'
 import SignUp from '@/app/sign-up'
 import { Alert } from 'react-native'
 
-// Mock dependencies
-jest.mock('expo-linear-gradient', () => {
-	const React = require('react')
-	const { View } = require('react-native')
-	return {
-		LinearGradient: jest.fn(({ children, testID }) => {
-			return React.createElement(
-				View,
-				{ testID: testID || 'linear-gradient' },
-				children,
-			)
-		}),
-	}
-})
+// All common mocks are now in jest.setup.js
 
 // Mock the auth hook
 const mockRegister = jest.fn()
@@ -26,16 +13,7 @@ jest.mock('@/hooks/auth', () => ({
 	}),
 }))
 
-// Mock react-native-iphone-x-helper
-jest.mock('react-native-iphone-x-helper', () => ({
-	getBottomSpace: jest.fn(() => 34),
-	getStatusBarHeight: jest.fn(() => 44),
-}))
-
-// Mock Alert instead of using global.alert
-jest.spyOn(Alert, 'alert').mockImplementation(() => 0)
-
-// Mock expo-router
+// Override router mock for this specific test
 const mockBack = jest.fn()
 jest.mock('expo-router', () => ({
 	useRouter: () => ({

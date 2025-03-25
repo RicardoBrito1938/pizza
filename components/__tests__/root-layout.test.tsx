@@ -1,20 +1,7 @@
 import { render, fireEvent, waitFor } from '@testing-library/react-native'
 import RootLayout from '@/app/index'
 
-// Mock dependencies
-jest.mock('expo-linear-gradient', () => {
-	const React = require('react')
-	const { View } = require('react-native')
-	return {
-		LinearGradient: jest.fn(({ children, testID }) => {
-			return React.createElement(
-				View,
-				{ testID: testID || 'linear-gradient' },
-				children,
-			)
-		}),
-	}
-})
+// All dependencies mocks are now in jest.setup.js
 
 // Mock the auth hook
 const mockSignIn = jest.fn()
@@ -27,7 +14,7 @@ jest.mock('@/hooks/auth', () => ({
 	}),
 }))
 
-// Mock the router (already done in jest.setup.js)
+// Override router mock for this specific test
 const mockRouterPush = jest.fn()
 jest.mock('expo-router', () => ({
 	useRouter: () => ({
@@ -38,11 +25,6 @@ jest.mock('expo-router', () => ({
 		preventAutoHideAsync: jest.fn(),
 		hideAsync: jest.fn(),
 	},
-}))
-
-// Mock react-native-iphone-x-helper
-jest.mock('react-native-iphone-x-helper', () => ({
-	getBottomSpace: jest.fn(() => 34),
 }))
 
 describe('RootLayout (Login Page)', () => {

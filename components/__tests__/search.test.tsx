@@ -1,17 +1,7 @@
 import { render, fireEvent } from '@testing-library/react-native'
 import { Search } from '../ui/search'
 
-// Mock Feather icons
-jest.mock('@expo/vector-icons', () => {
-	const React = require('react')
-	const { View } = require('react-native')
-
-	return {
-		Feather: jest.fn(({ name, size, color, testID }) => {
-			return React.createElement(View, { testID, name, size, color })
-		}),
-	}
-})
+// @expo/vector-icons mock is now in jest.setup.js
 
 describe('Search', () => {
 	it('renders correctly with all elements', () => {
