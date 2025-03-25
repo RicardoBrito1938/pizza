@@ -47,28 +47,37 @@ const Button = styled(TouchableOpacity, {
 	marginLeft: 8,
 })
 
-type Props = WithStyles<TextInputProps> & {
-	onClear: () => void
-	onSearch: () => void
+export const searchTestIDs = {
+	container: 'search-container',
+	inputArea: 'search-input-area',
+	input: 'search-input',
+	clearButton: 'search-clear-button',
+	clearIcon: 'search-clear-icon',
 }
 
-export const Search = ({ onSearch, onClear, ...rest }: Props) => {
+type Props = WithStyles<TextInputProps> & {
+	onClear: () => void
+	onSearch?: () => void
+}
+
+export const Search = ({ onClear, onSearch, ...rest }: Props) => {
 	return (
-		<Container testID='search-container'>
-			<InputArea testID='search-input-area'>
-				<Input placeholder='search...' testID='search-input' {...rest} />
-				<Clear onPress={onClear} testID='search-clear-button'>
-					<Feather name='x' size={16} testID='search-clear-icon' />
+		<Container testID={searchTestIDs.container}>
+			<InputArea testID={searchTestIDs.inputArea}>
+				<Input placeholder='search...' testID={searchTestIDs.input} {...rest} />
+				<Clear onPress={onClear} testID={searchTestIDs.clearButton}>
+					<Feather name='x' size={16} testID={searchTestIDs.clearIcon} />
 				</Clear>
 			</InputArea>
-			<Button onPress={onSearch} testID='search-button'>
-				<Feather
-					name='search'
-					size={24}
-					color={extendedTheme.colors.$title}
-					testID='search-icon'
-				/>
-			</Button>
+			{onSearch && (
+				<Button onPress={onSearch} testID='search-button'>
+					<Feather
+						name='search'
+						size={16}
+						color={extendedTheme.colors.$title}
+					/>
+				</Button>
+			)}
 		</Container>
 	)
 }

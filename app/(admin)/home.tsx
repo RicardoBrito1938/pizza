@@ -100,10 +100,6 @@ export default function Home() {
 		}
 	}, [])
 
-	const handleSearch = () => {
-		fetchPizzas(searchValue)
-	}
-
 	const handleClear = () => {
 		setSearchValue('')
 		fetchPizzas('')
@@ -153,7 +149,6 @@ export default function Home() {
 			<Search
 				onChangeText={setSearchValue}
 				value={searchValue}
-				onSearch={handleSearch}
 				onClear={handleClear}
 			/>
 

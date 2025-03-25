@@ -278,7 +278,7 @@ export default function Product() {
 
 			return pizzaData
 		} catch (error) {
-			Alert.alert('Error', `Pizza not found: ${error.message}`)
+			Alert.alert('Error', `Pizza not found: ${error}`)
 			return null
 		}
 	}, [id])

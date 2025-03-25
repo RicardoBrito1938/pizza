@@ -1,21 +1,5 @@
 import { render, fireEvent, waitFor } from '@testing-library/react-native'
 import Home from '@/app/(admin)/home'
-import { View } from 'react-native'
-
-// Mock dependencies
-jest.mock('expo-linear-gradient', () => {
-	const React = require('react')
-	const { View } = require('react-native')
-	return {
-		LinearGradient: jest.fn(({ children, testID }) => {
-			return React.createElement(
-				View,
-				{ testID: testID || 'linear-gradient' },
-				children,
-			)
-		}),
-	}
-})
 
 // Mock the auth hook
 const mockSignOut = jest.fn()
@@ -115,11 +99,6 @@ jest.mock('@expo/vector-icons', () => {
 		},
 	}
 })
-
-// Mock react-native-iphone-x-helper
-jest.mock('react-native-iphone-x-helper', () => ({
-	getStatusBarHeight: jest.fn(() => 44),
-}))
 
 // Mock the Search component to avoid Feather icon issues
 jest.mock('@/components/ui/search', () => {
