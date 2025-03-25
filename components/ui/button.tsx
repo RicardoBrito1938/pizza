@@ -49,8 +49,17 @@ export const Button = ({
 	...rest
 }: ButtonProps) => {
 	return (
-		<Container variant={variant} disabled={loading} {...rest}>
-			{loading ? <Loading /> : <Title>{title}</Title>}
+		<Container
+			variant={variant}
+			disabled={loading}
+			testID='button-container'
+			{...rest}
+		>
+			{loading ? (
+				<Loading testID='button-loading-indicator' />
+			) : (
+				<Title testID='button-text'>{title}</Title>
+			)}
 		</Container>
 	)
 }
