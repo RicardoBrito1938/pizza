@@ -57,9 +57,15 @@ export const RadioButton = ({
 	...props
 }: RadioButtonProps) => {
 	return (
-		<Container selected={selected ? 'true' : 'false'} {...props}>
-			<Radio>{selected && <Selected />}</Radio>
-			<Title>{props.title}</Title>
+		<Container
+			selected={selected ? 'true' : 'false'}
+			testID='radio-button-container'
+			{...props}
+		>
+			<Radio testID='radio-outer-circle'>
+				{selected && <Selected testID='radio-selected-indicator' />}
+			</Radio>
+			<Title testID='radio-title'>{props.title}</Title>
 		</Container>
 	)
 }

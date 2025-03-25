@@ -108,14 +108,23 @@ export const OrdersCard = ({ index, data, ...rest }: Props) => {
 	const hasBorderRight = index % 2 === 0 ? 'true' : 'false'
 
 	return (
-		<Container borderRight={hasBorderRight} {...rest}>
-			<StyledImage source={{ uri: data.image }} />
-			<Name>{data.pizza}</Name>
-			<Description>
+		<Container
+			borderRight={hasBorderRight}
+			{...rest}
+			testID='orders-card-container'
+		>
+			<StyledImage source={{ uri: data.image }} testID='orders-card-image' />
+			<Name testID='orders-card-name'>{data.pizza}</Name>
+			<Description testID='orders-card-description'>
 				Table {data.table_number} • Qnt: {data.quantity}
 			</Description>
-			<StatusContainer status={data.status}>
-				<StatusLabel status={data.status}>{data.status}</StatusLabel>
+			<StatusContainer
+				status={data.status}
+				testID='orders-card-status-container'
+			>
+				<StatusLabel status={data.status} testID='orders-card-status-label'>
+					{data.status}
+				</StatusLabel>
 			</StatusContainer>
 		</Container>
 	)
