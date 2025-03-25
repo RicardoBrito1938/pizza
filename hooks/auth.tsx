@@ -119,24 +119,24 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 			return { success: false, error: error.message }
 		}
 
-		const supabaseUser = data.user
-		if (supabaseUser) {
-			Alert.alert(
-				'Email Confirmation Required',
-				'A confirmation email has been sent to your email address. Please confirm your email to complete the registration process.',
-			)
+		const supabaseUser = data?.user
 
-			// Map Supabase user to custom User type
-			const user: User = {
-				id: supabaseUser.id,
-				email: supabaseUser.email || null,
-				isAdmin: false,
-			}
+		if (!supabaseUser) {
+			return { success: false, user: null }
+		}
+		Alert.alert(
+			'Email Confirmation Required',
+			'A confirmation email has been sent to your email address. Please confirm your email to complete the registration process.',
+		)
 
-			return { success: true, user }
+		// Map Supabase user to custom User type
+		const user: User = {
+			id: supabaseUser.id,
+			email: supabaseUser.email || null,
+			isAdmin: false,
 		}
 
-		return { success: false, user: null }
+		return { success: true, user }
 	}
 
 	return (
