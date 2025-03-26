@@ -197,7 +197,7 @@ export default function SignIn() {
 					<ButtonsContainer>
 						<Button
 							title='Sign in'
-							variant='primary'
+							variant='secondary'
 							onPress={handleSubmit(handleSignIn)}
 							loading={isLoading}
 						/>
