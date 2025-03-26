@@ -25,10 +25,11 @@ import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 
-const Container = styled(LinearGradient, {
+const Container = styled(View, {
 	flex: 1,
 	justifyContent: 'center',
 	alignItems: 'center',
+	backgroundColor: extendedTheme.tokens.$gradientStart,
 })
 
 const Content = styled(ScrollView, {
@@ -149,14 +150,7 @@ export default function SignIn() {
 	}
 
 	return (
-		<Container
-			colors={[
-				extendedTheme.tokens.$gradientStart,
-				extendedTheme.tokens.$gradientEnd,
-			]}
-			start={{ x: 0, y: 1 }}
-			end={{ x: 0.5, y: 0.5 }}
-		>
+		<Container>
 			<KeyboardAvoidingView
 				behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
 				style={{ width: '100%' }}
@@ -170,10 +164,11 @@ export default function SignIn() {
 						render={({ field: { onChange, value } }) => (
 							<Input
 								variant='secondary'
-								placeholder='E-mail'
+								animatedPlaceholder='E-mail'
 								autoCorrect={false}
 								autoCapitalize='none'
 								onChangeText={onChange}
+								cursorColor={extendedTheme.colors.$title}
 								value={value}
 							/>
 						)}
@@ -184,10 +179,11 @@ export default function SignIn() {
 						render={({ field: { onChange, value } }) => (
 							<Input
 								variant='secondary'
-								placeholder='Password'
+								animatedPlaceholder='Password'
 								autoCorrect={false}
 								autoCapitalize='none'
 								onChangeText={onChange}
+								cursorColor={extendedTheme.colors.$title}
 								value={value}
 								secureTextEntry
 							/>

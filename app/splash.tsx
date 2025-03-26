@@ -5,6 +5,7 @@ import { SplashScreen as ExpoSplashScreen, useRouter } from 'expo-router'
 import useSWR from 'swr'
 import { supabase } from '@/supabase/supabase'
 import { styled } from '@fast-styles/react'
+import extendedTheme from '@/styles/extendedTheme'
 
 ExpoSplashScreen.hideAsync()
 
@@ -12,7 +13,7 @@ const Container = styled(View, {
 	flex: 1,
 	justifyContent: 'center',
 	alignItems: 'center',
-	backgroundColor: 'tomato',
+	backgroundColor: extendedTheme.tokens.$gradientEnd,
 })
 
 const Text = styled(Animated.createAnimatedComponent(RNText), {
