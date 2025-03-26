@@ -13,7 +13,7 @@ const Wrapper = styled(View, {
 	position: 'relative',
 })
 
-export const Container = styled(TextInput, {
+const StyledInput = styled(TextInput, {
 	width: '100%',
 	height: 56,
 	backgroundColor: 'transparent',
@@ -65,26 +65,32 @@ export const Input = ({
 			inputValue && inputValue.length > 0 ? 1 : isFocused.value
 	}, [inputValue, isFocused.value, shouldFloat])
 
-	const labelStyle = useAnimatedStyle(() => {
-		return {
-			position: 'absolute',
-			left: 20,
-			top: withTiming(shouldFloat.value ? -8 : 18, { duration: 200 }),
-			fontSize: withTiming(shouldFloat.value ? 12 : 14, { duration: 200 }),
-			color: placeholderTextColor,
-			fontFamily: extendedTheme.fonts.$textFont,
-			zIndex: 999,
-			elevation: 1,
-			paddingHorizontal: 4,
-			backgroundColor: extendedTheme.tokens.$gradientStart, // Match input background color
-		}
-	})
+	const labelStyle = useAnimatedStyle(() => ({
+		position: 'absolute',
+		left: 20,
+		top: withTiming(shouldFloat.value ? -8 : 18, { duration: 200 }),
+		fontSize: withTiming(shouldFloat.value ? 12 : 14, { duration: 200 }),
+		color: placeholderTextColor,
+		fontFamily: extendedTheme.fonts.$textFont,
+		zIndex: 999,
+		elevation: 1,
+		paddingHorizontal: 4,
+		backgroundColor: extendedTheme.tokens.$gradientStart,
+	}))
 
 	const handleChangeText = (text: string) => {
 		setInputValue(text)
-		if (onChangeText) {
-			onChangeText(text)
-		}
+		onChangeText?.(text)
+	}
+
+	const handleFocus = () => {
+		isFocused.value = 1
+		shouldFloat.value = 1
+	}
+
+	const handleBlur = () => {
+		isFocused.value = 0
+		shouldFloat.value = inputValue.length > 0 ? 1 : 0
 	}
 
 	return (
@@ -94,22 +100,16 @@ export const Input = ({
 					{animatedPlaceholder}
 				</Animated.Text>
 			)}
-			<Container
+			<StyledInput
 				variant={variant}
 				placeholder={shouldFloat.value ? '' : placeholder}
 				placeholderTextColor={placeholderTextColor}
 				testID='input-container'
 				value={value}
 				onChangeText={handleChangeText}
-				onFocus={() => {
-					isFocused.value = 1
-					shouldFloat.value = 1
-				}}
-				onBlur={() => {
-					isFocused.value = 0
-					shouldFloat.value = inputValue.length > 0 ? 1 : 0
-				}}
-				style={{ paddingTop: 12 }} // Add padding to create space for the label
+				onFocus={handleFocus}
+				onBlur={handleBlur}
+				style={{ paddingTop: 12 }}
 				blurOnSubmit
 				{...rest}
 			/>
