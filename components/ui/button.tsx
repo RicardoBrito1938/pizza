@@ -29,7 +29,7 @@ const Container = styled(Pressable, {
 const Title = styled(Text, {
 	color: extendedTheme.colors.$title,
 	fontSize: 14,
-	fontFamily: extendedTheme.fonts.$textFont,
+	fontFamily: extendedTheme.fonts.$textFontBold,
 })
 
 const Loading = styled(ActivityIndicator, {

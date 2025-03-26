@@ -10,7 +10,6 @@ import {
 	View,
 	Alert,
 } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
 import extendedTheme from '@/styles/extendedTheme'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -88,9 +87,37 @@ const SignUpText = styled(Text, {
 	marginTop: 16,
 })
 
+const AvoidingView = styled(KeyboardAvoidingView, {
+	flex: 1,
+	width: '100%',
+
+	attributes: {
+		behavior: Platform.OS === 'ios' ? 'padding' : 'height',
+	},
+})
+
+const ErrorText = styled(Text, {
+	color: 'gold',
+	fontSize: 12,
+	fontWeight: 'bold',
+	textShadowColor: 'rgba(0, 0, 0, 0.5)',
+	textShadowOffset: { width: 1, height: 1 },
+	textShadowRadius: 1,
+	alignSelf: 'flex-start',
+})
+
+const InputGroup = styled(View, {
+	gap: 4,
+})
+
 const signInSchema = z.object({
 	email: z.string().email('Invalid email address'),
 	password: z.string().min(6, 'Password must be at least 6 characters'),
+})
+
+const Form = styled(View, {
+	width: '100%',
+	gap: 12,
 })
 
 SplashScreen.preventAutoHideAsync()
@@ -117,11 +144,10 @@ export default function SignIn() {
 		setIsLoading(true)
 
 		const { email, password } = data
-		const { data: authData, error: authError } =
-			await supabase.auth.signInWithPassword({
-				email,
-				password,
-			})
+		const { error: authError } = await supabase.auth.signInWithPassword({
+			email,
+			password,
+		})
 
 		if (authError) {
 			Alert.alert('Login Error', authError.message || 'Authentication failed')
@@ -129,7 +155,7 @@ export default function SignIn() {
 			return
 		}
 
-		await mutate() // Revalidate user data with SWR
+		await mutate()
 		setIsLoading(false)
 		router.navigate('/(admin)/home')
 	}
@@ -151,49 +177,62 @@ export default function SignIn() {
 
 	return (
 		<Container>
-			<KeyboardAvoidingView
-				behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-				style={{ width: '100%' }}
-			>
+			<AvoidingView>
 				<Content>
 					<Brand />
 					<Title>Login</Title>
-					<Controller
-						control={control}
-						name='email'
-						render={({ field: { onChange, value } }) => (
-							<Input
-								variant='secondary'
-								animatedPlaceholder='E-mail'
-								autoCorrect={false}
-								autoCapitalize='none'
-								onChangeText={onChange}
-								cursorColor={extendedTheme.colors.$title}
-								value={value}
-							/>
-						)}
-					/>
-					<Controller
-						control={control}
-						name='password'
-						render={({ field: { onChange, value } }) => (
-							<Input
-								variant='secondary'
-								animatedPlaceholder='Password'
-								autoCorrect={false}
-								autoCapitalize='none'
-								onChangeText={onChange}
-								cursorColor={extendedTheme.colors.$title}
-								value={value}
-								secureTextEntry
-							/>
-						)}
-					/>
-					<ForgotPasswordButton
-						onPress={() => handleForgotPassword(getValues('email'))}
-					>
-						<ForgotPasswordText>Forgot password?</ForgotPasswordText>
-					</ForgotPasswordButton>
+					<Form>
+						<Controller
+							control={control}
+							name='email'
+							render={({ field: { onChange, value } }) => (
+								<InputGroup>
+									<Input
+										variant='secondary'
+										animatedPlaceholder='E-mail'
+										autoCorrect={false}
+										autoCapitalize='none'
+										onChangeText={onChange}
+										cursorColor={extendedTheme.colors.$title}
+										value={value}
+									/>
+									{errors.email ? (
+										<ErrorText>{errors.email.message}</ErrorText>
+									) : (
+										<View style={{ height: 12 }} />
+									)}
+								</InputGroup>
+							)}
+						/>
+						<Controller
+							control={control}
+							name='password'
+							render={({ field: { onChange, value } }) => (
+								<InputGroup>
+									<Input
+										variant='secondary'
+										animatedPlaceholder='Password'
+										autoCorrect={false}
+										autoCapitalize='none'
+										onChangeText={onChange}
+										cursorColor={extendedTheme.colors.$title}
+										value={value}
+										secureTextEntry
+									/>
+									{errors.password ? (
+										<ErrorText>{errors.password.message}</ErrorText>
+									) : (
+										<View style={{ height: 12 }} />
+									)}
+								</InputGroup>
+							)}
+						/>
+						<ForgotPasswordButton
+							onPress={() => handleForgotPassword(getValues('email'))}
+						>
+							<ForgotPasswordText>Forgot password?</ForgotPasswordText>
+						</ForgotPasswordButton>
+					</Form>
 					<ButtonsContainer>
 						<Button
 							title='Sign in'
@@ -206,7 +245,7 @@ export default function SignIn() {
 						<SignUpText>Go to Sign Up</SignUpText>
 					</Pressable>
 				</Content>
-			</KeyboardAvoidingView>
+			</AvoidingView>
 		</Container>
 	)
 }

@@ -11,7 +11,6 @@ import { useEffect, useState } from 'react'
 const Wrapper = styled(View, {
 	width: '100%',
 	position: 'relative',
-	marginBottom: 16,
 })
 
 export const Container = styled(TextInput, {
