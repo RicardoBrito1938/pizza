@@ -1,4 +1,3 @@
-import 'react-native-url-polyfill/auto'
 import { styled } from '@fast-styles/react'
 import {
 	Image,

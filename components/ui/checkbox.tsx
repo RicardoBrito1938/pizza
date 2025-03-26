@@ -28,6 +28,7 @@ export function Checkbox({ checked, onPress, label }: CheckboxProps) {
 				onValueChange={onPress}
 				color={checked ? extendedTheme.colors.$secondary900 : undefined}
 				testID='checkbox-input'
+				style={{ borderBlockColor: extendedTheme.colors.$secondary900 }}
 			/>
 			{label && <CheckboxLabel testID='checkbox-label'>{label}</CheckboxLabel>}
 		</Container>

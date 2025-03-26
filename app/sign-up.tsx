@@ -6,29 +6,26 @@ import {
 	ScrollView,
 	Text,
 	View,
-	SafeAreaView,
 	Alert,
 } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
 import extendedTheme from '@/styles/extendedTheme'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import {
-	getBottomSpace,
-	getStatusBarHeight,
-} from 'react-native-iphone-x-helper'
-import brandImg from '@/assets/images/brand.png'
-import { useState } from 'react'
+import { getBottomSpace } from 'react-native-iphone-x-helper'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ButtonBack } from '@/components/ui/button-back'
 import { fetchUser, registerUser } from '@/utils/auth'
 import useSWR from 'swr'
-import { router } from 'expo-router'
+import { useRouter } from 'expo-router'
+import { useForm, Controller } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useState } from 'react'
 
-const Container = styled(LinearGradient, {
+const Container = styled(View, {
 	flex: 1,
 	justifyContent: 'center',
 	alignItems: 'center',
+	backgroundColor: extendedTheme.colors.$background,
 })
 
 const Content = styled(ScrollView, {
@@ -44,7 +41,7 @@ const Content = styled(ScrollView, {
 })
 
 const Title = styled(Text, {
-	color: extendedTheme.colors.$title,
+	color: extendedTheme.colors.$secondary900,
 	fontSize: 32,
 	fontFamily: extendedTheme.fonts.$titleFont,
 	marginBottom: 24,
@@ -53,14 +50,29 @@ const Title = styled(Text, {
 })
 
 const Brand = styled(Image, {
-	height: 340,
+	height: 240,
 	marginTop: 64,
-	marginBottom: 32,
 
 	attributes: {
 		resizeMode: 'contain',
-		source: brandImg,
+		source: {
+			uri: 'https://www.kindpng.com/picc/m/95-954719_pizza-chef-vector-italian-pizza-chef-png-transparent.png',
+		},
 	},
+})
+
+const InputGroup = styled(View, {
+	gap: 4,
+})
+
+const ErrorText = styled(Text, {
+	color: extendedTheme.tokens.$gradientStart,
+	fontSize: 12,
+	fontWeight: 'bold',
+	textShadowColor: 'rgba(0, 0, 0, 0.5)',
+	textShadowOffset: { width: 1, height: 1 },
+	textShadowRadius: 1,
+	alignSelf: 'flex-start',
 })
 
 const CheckboxContainer = styled(View, {
@@ -70,108 +82,178 @@ const CheckboxContainer = styled(View, {
 })
 
 const CheckboxLabel = styled(Text, {
-	color: extendedTheme.colors.$title,
+	color: extendedTheme.colors.$secondary900,
 	fontSize: 14,
 	fontFamily: extendedTheme.fonts.$textFont,
 	marginLeft: 8,
 })
 
-const Header = styled(View, {
+const AvoidingView = styled(KeyboardAvoidingView, {
+	flex: 1,
 	width: '100%',
-	paddingHorizontal: 24,
-	paddingTop: getStatusBarHeight() + 33,
-	marginBottom: 16,
+
+	attributes: {
+		behavior: Platform.OS === 'ios' ? 'padding' : 'height',
+	},
 })
 
+const Form = styled(View, {
+	width: '100%',
+	gap: 12,
+})
+
+const signUpSchema = z
+	.object({
+		name: z.string().min(1, 'Name is required'),
+		email: z.string().email('Invalid email address'),
+		password: z.string().min(6, 'Password must be at least 6 characters'),
+		confirmPassword: z
+			.string()
+			.min(6, 'Confirm Password must be at least 6 characters'),
+	})
+	.refine((data) => data.password === data.confirmPassword, {
+		message: 'Passwords do not match',
+		path: ['confirmPassword'],
+	})
+
 export default function SignUp() {
-	const [email, setEmail] = useState('')
-	const [name, setName] = useState('')
-	const [password, setPassword] = useState('')
-	const [confirmPassword, setConfirmPassword] = useState('')
+	const {
+		control,
+		handleSubmit,
+		formState: { errors },
+	} = useForm({
+		resolver: zodResolver(signUpSchema),
+		defaultValues: {
+			name: '',
+			email: '',
+			password: '',
+			confirmPassword: '',
+		},
+	})
 	const [isAdmin, setIsAdmin] = useState(false)
-
 	const { mutate } = useSWR('/user', fetchUser)
+	const router = useRouter()
 
-	const handleRegister = async () => {
-		if (password !== confirmPassword) {
-			Alert.alert('Validation Error', 'Passwords do not match')
-			return
-		}
-
-		const result = await registerUser(email, password, name)
+	const handleRegister = async (data: {
+		name: string
+		email: string
+		password: string
+	}) => {
+		const result = await registerUser(data.email, data.password, data.name)
 
 		if (result.success && result.user) {
 			await mutate()
 			router.replace('/(admin)/home')
+		} else {
+			Alert.alert('Registration Error', 'Failed to register user')
 		}
 	}
 
 	return (
-		<SafeAreaView style={{ flex: 1 }}>
-			<Container
-				colors={[
-					extendedTheme.tokens.$gradientStart,
-					extendedTheme.tokens.$gradientEnd,
-				]}
-				start={{ x: 0, y: 1 }}
-				end={{ x: 0.5, y: 0.5 }}
-			>
-				<KeyboardAvoidingView
-					behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-					style={{ width: '100%' }}
-				>
-					<Header>
-						<ButtonBack />
-					</Header>
-					<Content>
-						<Brand />
-						<Title>Sign Up</Title>
-						<Input
-							variant='secondary'
-							placeholder='Name'
-							autoCorrect={false}
-							autoCapitalize='words'
-							onChangeText={setName}
+		<Container>
+			<AvoidingView>
+				<Content>
+					<Brand />
+					<Title>Sign Up</Title>
+					<Form>
+						<Controller
+							control={control}
+							name='name'
+							render={({ field: { onChange, value } }) => (
+								<InputGroup>
+									<Input
+										variant='secondary'
+										animatedPlaceholder='Name'
+										autoCorrect={false}
+										autoCapitalize='words'
+										onChangeText={onChange}
+										value={value}
+									/>
+									{errors.name ? (
+										<ErrorText>{errors.name.message}</ErrorText>
+									) : (
+										<View style={{ height: 12 }} />
+									)}
+								</InputGroup>
+							)}
 						/>
-						<Input
-							variant='secondary'
-							placeholder='E-mail'
-							autoCorrect={false}
-							autoCapitalize='none'
-							onChangeText={setEmail}
+						<Controller
+							control={control}
+							name='email'
+							render={({ field: { onChange, value } }) => (
+								<InputGroup>
+									<Input
+										variant='secondary'
+										animatedPlaceholder='E-mail'
+										autoCorrect={false}
+										autoCapitalize='none'
+										onChangeText={onChange}
+										value={value}
+									/>
+									{errors.email ? (
+										<ErrorText>{errors.email.message}</ErrorText>
+									) : (
+										<View style={{ height: 12 }} />
+									)}
+								</InputGroup>
+							)}
 						/>
-						<Input
-							variant='secondary'
-							placeholder='Password'
-							autoCorrect={false}
-							autoCapitalize='none'
-							onChangeText={setPassword}
-							// secureTextEntry
+						<Controller
+							control={control}
+							name='password'
+							render={({ field: { onChange, value } }) => (
+								<InputGroup>
+									<Input
+										variant='secondary'
+										animatedPlaceholder='Password'
+										autoCorrect={false}
+										autoCapitalize='none'
+										onChangeText={onChange}
+										value={value}
+										secureTextEntry
+									/>
+									{errors.password ? (
+										<ErrorText>{errors.password.message}</ErrorText>
+									) : (
+										<View style={{ height: 12 }} />
+									)}
+								</InputGroup>
+							)}
 						/>
-						<Input
-							variant='secondary'
-							placeholder='Confirm Password'
-							autoCorrect={false}
-							autoCapitalize='none'
-							onChangeText={setConfirmPassword}
-							// secureTextEntry
+						<Controller
+							control={control}
+							name='confirmPassword'
+							render={({ field: { onChange, value } }) => (
+								<InputGroup>
+									<Input
+										variant='secondary'
+										animatedPlaceholder='Confirm Password'
+										autoCorrect={false}
+										autoCapitalize='none'
+										onChangeText={onChange}
+										value={value}
+										secureTextEntry
+									/>
+									{errors.confirmPassword ? (
+										<ErrorText>{errors.confirmPassword.message}</ErrorText>
+									) : (
+										<View style={{ height: 12 }} />
+									)}
+								</InputGroup>
+							)}
 						/>
-						<CheckboxContainer>
-							<Checkbox
-								checked={isAdmin}
-								onPress={() => setIsAdmin(!isAdmin)}
-							/>
-							<CheckboxLabel testID='checkbox-label'>Admin</CheckboxLabel>
-						</CheckboxContainer>
-						<Button
-							title='Sign Up'
-							variant='primary'
-							onPress={handleRegister}
-							testID='sign-up-button'
-						/>
-					</Content>
-				</KeyboardAvoidingView>
-			</Container>
-		</SafeAreaView>
+					</Form>
+					<CheckboxContainer>
+						<Checkbox checked={isAdmin} onPress={() => setIsAdmin(!isAdmin)} />
+						<CheckboxLabel>Admin</CheckboxLabel>
+					</CheckboxContainer>
+					<Button
+						title='Sign Up'
+						variant='primary'
+						onPress={handleSubmit(handleRegister)}
+					/>
+				</Content>
+			</AvoidingView>
+		</Container>
 	)
 }

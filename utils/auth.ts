@@ -11,6 +11,7 @@ export const registerUser = async (
 	email: string,
 	password: string,
 	name = '',
+	isAdmin = false,
 ): Promise<{ success: boolean; user?: User | null; error?: string }> => {
 	const { data, error } = await supabase.auth.signUp({
 		email,
@@ -37,7 +38,7 @@ export const registerUser = async (
 	const user: User = {
 		id: supabaseUser.id,
 		email: supabaseUser.email || null,
-		isAdmin: false,
+		isAdmin,
 	}
 
 	return { success: true, user }
