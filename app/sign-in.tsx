@@ -21,6 +21,9 @@ import { SplashScreen, useRouter } from 'expo-router'
 import { supabase } from '@/supabase/supabase'
 import useSWR from 'swr'
 import { fetchUser } from '@/utils/auth'
+import { useForm, Controller } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 
 const Container = styled(LinearGradient, {
 	flex: 1,
@@ -84,40 +87,35 @@ const SignUpText = styled(Text, {
 	marginTop: 16,
 })
 
+const signInSchema = z.object({
+	email: z.string().email('Invalid email address'),
+	password: z.string().min(6, 'Password must be at least 6 characters'),
+})
+
 SplashScreen.preventAutoHideAsync()
 
 export default function SignIn() {
-	const [email, setEmail] = useState('')
-	const [password, setPassword] = useState('')
+	const {
+		control,
+		handleSubmit,
+		formState: { errors },
+		getValues,
+	} = useForm({
+		resolver: zodResolver(signInSchema),
+		defaultValues: {
+			email: '',
+			password: '',
+		},
+	})
 	const [isLoading, setIsLoading] = useState(false)
 
 	const router = useRouter()
 	const { mutate } = useSWR('/user', fetchUser)
 
-	const handleForgotPassword = async (email: string) => {
-		if (!email) {
-			Alert.alert('Forgot Password', 'Email is required')
-			return
-		}
-
-		const { error } = await supabase.auth.resetPasswordForEmail(email)
-		if (error) {
-			Alert.alert('Forgot Password', error.message || 'Password reset failed')
-			return
-		}
-
-		Alert.alert('Forgot Password', 'Password reset email sent')
-	}
-
-	const handleSignIn = async () => {
+	const handleSignIn = async (data: { email: string; password: string }) => {
 		setIsLoading(true)
 
-		if (!email || !password) {
-			Alert.alert('Login Error', 'Email and password are required')
-			setIsLoading(false)
-			return
-		}
-
+		const { email, password } = data
 		const { data: authData, error: authError } =
 			await supabase.auth.signInWithPassword({
 				email,
@@ -133,6 +131,21 @@ export default function SignIn() {
 		await mutate() // Revalidate user data with SWR
 		setIsLoading(false)
 		router.navigate('/(admin)/home')
+	}
+
+	const handleForgotPassword = async (email: string) => {
+		if (!email) {
+			Alert.alert('Forgot Password', 'Email is required')
+			return
+		}
+
+		const { error } = await supabase.auth.resetPasswordForEmail(email)
+		if (error) {
+			Alert.alert('Forgot Password', error.message || 'Password reset failed')
+			return
+		}
+
+		Alert.alert('Forgot Password', 'Password reset email sent')
 	}
 
 	return (
@@ -151,29 +164,45 @@ export default function SignIn() {
 				<Content>
 					<Brand />
 					<Title>Login</Title>
-					<Input
-						variant='secondary'
-						placeholder='E-mail'
-						autoCorrect={false}
-						autoCapitalize='none'
-						onChangeText={setEmail}
+					<Controller
+						control={control}
+						name='email'
+						render={({ field: { onChange, value } }) => (
+							<Input
+								variant='secondary'
+								placeholder='E-mail'
+								autoCorrect={false}
+								autoCapitalize='none'
+								onChangeText={onChange}
+								value={value}
+							/>
+						)}
 					/>
-					<Input
-						variant='secondary'
-						placeholder='Password'
-						autoCorrect={false}
-						autoCapitalize='none'
-						onChangeText={setPassword}
-						secureTextEntry
+					<Controller
+						control={control}
+						name='password'
+						render={({ field: { onChange, value } }) => (
+							<Input
+								variant='secondary'
+								placeholder='Password'
+								autoCorrect={false}
+								autoCapitalize='none'
+								onChangeText={onChange}
+								value={value}
+								secureTextEntry
+							/>
+						)}
 					/>
-					<ForgotPasswordButton onPress={() => handleForgotPassword(email)}>
+					<ForgotPasswordButton
+						onPress={() => handleForgotPassword(getValues('email'))}
+					>
 						<ForgotPasswordText>Forgot password?</ForgotPasswordText>
 					</ForgotPasswordButton>
 					<ButtonsContainer>
 						<Button
 							title='Sign in'
 							variant='primary'
-							onPress={handleSignIn}
+							onPress={handleSubmit(handleSignIn)}
 							loading={isLoading}
 						/>
 					</ButtonsContainer>
