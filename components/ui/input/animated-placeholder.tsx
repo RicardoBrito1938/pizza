@@ -1,7 +1,11 @@
 import extendedTheme from '@/styles/extendedTheme'
 import type { PropsWithChildren } from 'react'
 import { useInputContext } from './hooks/useInputContext'
-import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'
+import Animated, {
+	useAnimatedStyle,
+	withTiming,
+	useDerivedValue,
+} from 'react-native-reanimated'
 
 type AnimatedPlaceholderProps = {
 	color?: string
@@ -15,11 +19,14 @@ export const AnimatedPlaceholder = ({
 }: PropsWithChildren<AnimatedPlaceholderProps>) => {
 	const { shouldFloat } = useInputContext()
 
+	const animatedTop = useDerivedValue(() => (shouldFloat.value ? -8 : 18))
+	const animatedFontSize = useDerivedValue(() => (shouldFloat.value ? 12 : 14))
+
 	const labelStyle = useAnimatedStyle(() => ({
 		position: 'absolute',
 		left: 20,
-		top: withTiming(shouldFloat.value ? -8 : 18, { duration: 200 }),
-		fontSize: withTiming(shouldFloat.value ? 12 : 14, { duration: 200 }),
+		top: withTiming(animatedTop.value, { duration: 200 }),
+		fontSize: withTiming(animatedFontSize.value, { duration: 200 }),
 		color: color,
 		fontFamily: extendedTheme.fonts.$textFont,
 		zIndex: 999,

@@ -2,6 +2,7 @@ import extendedTheme from '@/styles/extendedTheme'
 import { styled } from '@fast-styles/react'
 import { TextInput } from 'react-native'
 import { useInputContext } from './hooks/useInputContext'
+import { useDerivedValue } from 'react-native-reanimated'
 
 const StyledInput = styled(TextInput, {
 	width: '100%',
@@ -27,9 +28,13 @@ export const Trigger = () => {
 		rest,
 	} = useInputContext()
 
+	const placeholder = useDerivedValue(() =>
+		shouldFloat.value ? '' : rest.placeholder || '',
+	)
+
 	return (
 		<StyledInput
-			placeholder={shouldFloat.value ? '' : rest.placeholder || ''}
+			placeholder={placeholder.value}
 			testID='input-container'
 			value={value}
 			onChangeText={handleChangeText}
