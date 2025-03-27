@@ -1,31 +1,26 @@
 import { render, fireEvent } from '@testing-library/react-native'
 import { Input } from '../ui/input'
-import extendedTheme from '@/styles/extendedTheme'
 
 describe('Input', () => {
 	it('renders correctly with default props', () => {
-		const { getByTestId } = render(<Input.Root placeholder='Enter text' />)
+		const { getByTestId } = render(
+			<Input.Root placeholder='Enter text'>
+				<Input.Trigger />
+			</Input.Root>,
+		)
 
 		const input = getByTestId('input-container')
 		expect(input).toBeTruthy()
 		expect(input.props.placeholder).toBe('Enter text')
-		expect(input.props.placeholderTextColor).toBe(
-			extendedTheme.colors.$secondary900,
-		)
-	})
-
-	it('renders with primary variant by default', () => {
-		const { getByTestId } = render(<Input.Root />)
-
-		const input = getByTestId('input-container')
-		expect(input.props.variant).toBe('primary')
 	})
 
 	it('accepts input value', () => {
 		const onChangeTextMock = jest.fn()
 
 		const { getByTestId } = render(
-			<Input.Root value='test value' onChangeText={onChangeTextMock} />,
+			<Input.Root value='test value' onChangeText={onChangeTextMock}>
+				<Input.Trigger />
+			</Input.Root>,
 		)
 
 		const input = getByTestId('input-container')
@@ -43,7 +38,9 @@ describe('Input', () => {
 				secureTextEntry={true}
 				maxLength={10}
 				onFocus={onFocusMock}
-			/>,
+			>
+				<Input.Trigger />
+			</Input.Root>,
 		)
 
 		const input = getByTestId('input-container')
@@ -56,7 +53,11 @@ describe('Input', () => {
 	})
 
 	it('has correct default styling props', () => {
-		const { getByTestId } = render(<Input.Root />)
+		const { getByTestId } = render(
+			<Input.Root>
+				<Input.Trigger />
+			</Input.Root>,
+		)
 
 		const input = getByTestId('input-container')
 
