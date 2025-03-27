@@ -1,4 +1,4 @@
-import { Root, type InputProps } from './root'
+import { Root } from './root'
 import { AnimatedPlaceholder } from './animated-placeholder'
 import { Trigger } from './trigger'
 
@@ -7,5 +7,3 @@ export const Input = {
 	AnimatedPlaceholder,
 	Trigger,
 }
-
-export type { InputProps }

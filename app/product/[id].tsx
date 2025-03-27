@@ -76,6 +76,7 @@ const Form = styled(View, {
 const Label = styled(Text, {
 	color: extendedTheme.colors.$secondary900,
 	fontFamily: extendedTheme.fonts.$textFont,
+	marginBottom: 8,
 })
 
 const InputGroup = styled(View, {
@@ -86,8 +87,18 @@ const InputGroup = styled(View, {
 const InputGroupHeader = styled(View, {
 	width: '100%',
 	flexDirection: 'row',
-	justifyContent: 'flex-end',
 	alignItems: 'center',
+
+	variants: {
+		hasId: {
+			true: {
+				justifyContent: 'space-between',
+			},
+			false: {
+				justifyContent: 'flex-end',
+			},
+		},
+	},
 })
 
 const MaxCharacters = styled(Text, {
@@ -146,7 +157,7 @@ export default function Product() {
 	})
 
 	// Watch the image URL from the form and memoize it to avoid Reanimated warnings
-	const photoUrl = useMemo(() => watch('photo_url'), [watch('photo_url')])
+	const photoUrl = useMemo(() => watch('photo_url'), [watch])
 
 	// Update form when pizza data is loaded
 	useEffect(() => {
@@ -339,18 +350,21 @@ export default function Product() {
 
 				<Form>
 					<InputGroup>
+						{id && <Label>Name</Label>}
 						<Controller
 							control={control}
 							name='name'
 							render={({ field: { onChange, value } }) => (
 								<>
 									<Input.Root value={value} onChangeText={onChange}>
-										<Input.AnimatedPlaceholder
-											backgroundColor={extendedTheme.colors.$background}
-											color={extendedTheme.colors.$secondary900}
-										>
-											Name
-										</Input.AnimatedPlaceholder>
+										{!id && (
+											<Input.AnimatedPlaceholder
+												backgroundColor={extendedTheme.colors.$background}
+												color={extendedTheme.colors.$secondary900}
+											>
+												Name
+											</Input.AnimatedPlaceholder>
+										)}
 										<Input.Trigger />
 									</Input.Root>
 									{errors.name && (
@@ -366,7 +380,8 @@ export default function Product() {
 					</InputGroup>
 
 					<InputGroup>
-						<InputGroupHeader>
+						<InputGroupHeader hasId={id ? 'true' : 'false'}>
+							{id && <Label>Description</Label>}
 							<MaxCharacters>0 to 60 characters</MaxCharacters>
 						</InputGroupHeader>
 
@@ -382,12 +397,14 @@ export default function Product() {
 										value={value}
 										onChangeText={onChange}
 									>
-										<Input.AnimatedPlaceholder
-											backgroundColor={extendedTheme.colors.$background}
-											color={extendedTheme.colors.$secondary900}
-										>
-											Description
-										</Input.AnimatedPlaceholder>
+										{!id && (
+											<Input.AnimatedPlaceholder
+												backgroundColor={extendedTheme.colors.$background}
+												color={extendedTheme.colors.$secondary900}
+											>
+												Description
+											</Input.AnimatedPlaceholder>
+										)}
 										<Input.Trigger />
 									</Input.Root>
 									{errors.description && (
