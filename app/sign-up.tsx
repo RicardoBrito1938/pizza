@@ -7,7 +7,6 @@ import {
 	Text,
 	View,
 	Alert,
-	TouchableOpacity,
 } from 'react-native'
 import extendedTheme from '@/styles/extendedTheme'
 import { Button } from '@/components/ui/button'
@@ -67,7 +66,7 @@ const InputGroup = styled(View, {
 })
 
 const ErrorText = styled(Text, {
-	color: extendedTheme.tokens.$gradientStart,
+	color: extendedTheme.tokens.$gradientEnd,
 	fontSize: 12,
 	fontWeight: 'bold',
 	textShadowColor: 'rgba(0, 0, 0, 0.5)',
