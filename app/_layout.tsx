@@ -30,10 +30,11 @@ export default function RootLayout() {
 					options={{
 						headerTitle: '',
 						headerShown: true,
+						headerTransparent: true,
 						headerLeft: () => (
 							<MaterialIcons
 								name='chevron-left'
-								size={48}
+								size={36}
 								color={extendedTheme.colors.$secondary900}
 								testID='button-back-icon'
 								onPress={() => router.back()}

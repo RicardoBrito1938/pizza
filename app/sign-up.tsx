@@ -51,6 +51,7 @@ const Title = styled(Text, {
 
 const Brand = styled(Image, {
 	height: 240,
+	marginTop: 64,
 
 	attributes: {
 		resizeMode: 'contain',
