@@ -7,6 +7,7 @@ import {
 	Text,
 	View,
 	Alert,
+	TouchableOpacity,
 } from 'react-native'
 import extendedTheme from '@/styles/extendedTheme'
 import { Button } from '@/components/ui/button'
@@ -220,7 +221,7 @@ export default function SignUp() {
 										autoCapitalize='none'
 										onChangeText={onChange}
 										value={value}
-										// secureTextEntry
+										secureTextEntry
 									>
 										<Input.AnimatedPlaceholder
 											backgroundColor={extendedTheme.colors.$background}
@@ -275,6 +276,7 @@ export default function SignUp() {
 						title='Sign Up'
 						variant='primary'
 						onPress={handleSubmit(handleRegister)}
+						testID='sign-up-button'
 					/>
 				</Content>
 			</AvoidingView>
