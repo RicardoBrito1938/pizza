@@ -18,7 +18,7 @@ import {
 } from 'react-native'
 import { getStatusBarHeight } from 'react-native-iphone-x-helper'
 import * as ImagePicker from 'expo-image-picker'
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { InputPrice } from '@/components/ui/input-price'
 import { Input } from '@/components/ui/input'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -84,7 +84,7 @@ const InputGroup = styled(View, {
 const InputGroupHeader = styled(View, {
 	width: '100%',
 	flexDirection: 'row',
-	justifyContent: 'space-between',
+	justifyContent: 'flex-end',
 	alignItems: 'center',
 })
 
@@ -304,23 +304,29 @@ export default function Product() {
 
 				<Form>
 					<InputGroup>
-						<Label>Name</Label>
-						<Input
+						<Input.Root
 							value={pizza?.name || ''}
 							onChangeText={(text) => {
 								if (pizza)
 									mutate(`pizza/${pizzaId}`, { ...pizza, name: text }, false)
 							}}
-						/>
+						>
+							<Input.AnimatedPlaceholder
+								backgroundColor={extendedTheme.colors.$background}
+								color={extendedTheme.colors.$secondary900}
+							>
+								Name
+							</Input.AnimatedPlaceholder>
+							<Input.Trigger />
+						</Input.Root>
 					</InputGroup>
 
 					<InputGroup>
 						<InputGroupHeader>
-							<Label>Description</Label>
 							<MaxCharacters>0 to 60 characters</MaxCharacters>
 						</InputGroupHeader>
 
-						<Input
+						<Input.Root
 							multiline
 							maxLength={60}
 							style={{ height: 80 }}
@@ -333,7 +339,15 @@ export default function Product() {
 										false,
 									)
 							}}
-						/>
+						>
+							<Input.AnimatedPlaceholder
+								backgroundColor={extendedTheme.colors.$background}
+								color={extendedTheme.colors.$secondary900}
+							>
+								Description
+							</Input.AnimatedPlaceholder>
+							<Input.Trigger />
+						</Input.Root>
 					</InputGroup>
 
 					<InputGroup>

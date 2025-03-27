@@ -9,7 +9,6 @@ import {
 	Alert,
 } from 'react-native'
 import extendedTheme from '@/styles/extendedTheme'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { getBottomSpace } from 'react-native-iphone-x-helper'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -20,6 +19,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
+import { Input } from '@/components/ui/input'
 
 const Container = styled(View, {
 	flex: 1,
@@ -51,7 +51,6 @@ const Title = styled(Text, {
 
 const Brand = styled(Image, {
 	height: 240,
-	marginTop: 64,
 
 	attributes: {
 		resizeMode: 'contain',
@@ -161,14 +160,20 @@ export default function SignUp() {
 							name='name'
 							render={({ field: { onChange, value } }) => (
 								<InputGroup>
-									<Input
-										variant='secondary'
-										animatedPlaceholder='Name'
+									<Input.Root
 										autoCorrect={false}
 										autoCapitalize='words'
 										onChangeText={onChange}
 										value={value}
-									/>
+									>
+										<Input.AnimatedPlaceholder
+											backgroundColor={extendedTheme.colors.$background}
+											color={extendedTheme.colors.$secondary900}
+										>
+											Name
+										</Input.AnimatedPlaceholder>
+										<Input.Trigger />
+									</Input.Root>
 									{errors.name ? (
 										<ErrorText>{errors.name.message}</ErrorText>
 									) : (
@@ -182,14 +187,20 @@ export default function SignUp() {
 							name='email'
 							render={({ field: { onChange, value } }) => (
 								<InputGroup>
-									<Input
-										variant='secondary'
-										animatedPlaceholder='E-mail'
+									<Input.Root
 										autoCorrect={false}
 										autoCapitalize='none'
 										onChangeText={onChange}
 										value={value}
-									/>
+									>
+										<Input.AnimatedPlaceholder
+											backgroundColor={extendedTheme.colors.$background}
+											color={extendedTheme.colors.$secondary900}
+										>
+											E-mail
+										</Input.AnimatedPlaceholder>
+										<Input.Trigger />
+									</Input.Root>
 									{errors.email ? (
 										<ErrorText>{errors.email.message}</ErrorText>
 									) : (
@@ -203,15 +214,21 @@ export default function SignUp() {
 							name='password'
 							render={({ field: { onChange, value } }) => (
 								<InputGroup>
-									<Input
-										variant='secondary'
-										animatedPlaceholder='Password'
+									<Input.Root
 										autoCorrect={false}
 										autoCapitalize='none'
 										onChangeText={onChange}
 										value={value}
-										secureTextEntry
-									/>
+										// secureTextEntry
+									>
+										<Input.AnimatedPlaceholder
+											backgroundColor={extendedTheme.colors.$background}
+											color={extendedTheme.colors.$secondary900}
+										>
+											Password
+										</Input.AnimatedPlaceholder>
+										<Input.Trigger />
+									</Input.Root>
 									{errors.password ? (
 										<ErrorText>{errors.password.message}</ErrorText>
 									) : (
@@ -225,15 +242,21 @@ export default function SignUp() {
 							name='confirmPassword'
 							render={({ field: { onChange, value } }) => (
 								<InputGroup>
-									<Input
-										variant='secondary'
-										animatedPlaceholder='Confirm Password'
+									<Input.Root
 										autoCorrect={false}
 										autoCapitalize='none'
 										onChangeText={onChange}
 										value={value}
-										secureTextEntry
-									/>
+										// secureTextEntry
+									>
+										<Input.AnimatedPlaceholder
+											backgroundColor={extendedTheme.colors.$background}
+											color={extendedTheme.colors.$secondary900}
+										>
+											Confirm password
+										</Input.AnimatedPlaceholder>
+										<Input.Trigger />
+									</Input.Root>
 									{errors.confirmPassword ? (
 										<ErrorText>{errors.confirmPassword.message}</ErrorText>
 									) : (

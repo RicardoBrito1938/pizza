@@ -10,7 +10,6 @@ import {
 	Alert,
 } from 'react-native'
 import extendedTheme from '@/styles/extendedTheme'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { getBottomSpace } from 'react-native-iphone-x-helper'
 import brandImg from '@/assets/images/brand.png'
@@ -22,6 +21,7 @@ import { fetchUser } from '@/utils/auth'
 import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Input } from '@/components/ui/input'
 
 const Container = styled(View, {
 	flex: 1,
@@ -180,21 +180,28 @@ export default function SignIn() {
 				<Content>
 					<Brand />
 					<Title>Login</Title>
+
 					<Form>
 						<Controller
 							control={control}
 							name='email'
 							render={({ field: { onChange, value } }) => (
 								<InputGroup>
-									<Input
-										variant='secondary'
-										animatedPlaceholder='E-mail'
+									<Input.Root
 										autoCorrect={false}
 										autoCapitalize='none'
 										onChangeText={onChange}
 										cursorColor={extendedTheme.colors.$title}
 										value={value}
-									/>
+										style={{
+											color: extendedTheme.colors.$title,
+										}}
+									>
+										<Input.AnimatedPlaceholder>
+											E-mail
+										</Input.AnimatedPlaceholder>
+										<Input.Trigger />
+									</Input.Root>
 									{errors.email ? (
 										<ErrorText>{errors.email.message}</ErrorText>
 									) : (
@@ -208,16 +215,22 @@ export default function SignIn() {
 							name='password'
 							render={({ field: { onChange, value } }) => (
 								<InputGroup>
-									<Input
-										variant='secondary'
-										animatedPlaceholder='Password'
+									<Input.Root
 										autoCorrect={false}
 										autoCapitalize='none'
 										onChangeText={onChange}
 										cursorColor={extendedTheme.colors.$title}
 										value={value}
 										secureTextEntry
-									/>
+										style={{
+											color: extendedTheme.colors.$title,
+										}}
+									>
+										<Input.AnimatedPlaceholder>
+											Password
+										</Input.AnimatedPlaceholder>
+										<Input.Trigger />
+									</Input.Root>
 									{errors.password ? (
 										<ErrorText>{errors.password.message}</ErrorText>
 									) : (

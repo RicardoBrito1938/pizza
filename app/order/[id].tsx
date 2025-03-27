@@ -214,21 +214,35 @@ export default function Order() {
 
 					<FormRow>
 						<InputGroup>
-							<Label>Table Number</Label>
-							<Input
+							<Input.Root
 								placeholder='Table Number'
 								keyboardType='numeric'
 								onChangeText={setTableNumber}
-							/>
+							>
+								<Input.AnimatedPlaceholder
+									backgroundColor={extendedTheme.colors.$background}
+									color={extendedTheme.colors.$secondary900}
+								>
+									Table Number
+								</Input.AnimatedPlaceholder>
+								<Input.Trigger />
+							</Input.Root>
 						</InputGroup>
 
 						<InputGroup>
-							<Label>Quantity</Label>
-							<Input
+							<Input.Root
 								placeholder='Quantity'
 								keyboardType='numeric'
 								onChangeText={(value) => setQuantity(Number(value))}
-							/>
+							>
+								<Input.AnimatedPlaceholder
+									backgroundColor={extendedTheme.colors.$background}
+									color={extendedTheme.colors.$secondary900}
+								>
+									Quantity
+								</Input.AnimatedPlaceholder>
+								<Input.Trigger />
+							</Input.Root>
 						</InputGroup>
 					</FormRow>
 

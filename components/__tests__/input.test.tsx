@@ -4,7 +4,7 @@ import extendedTheme from '@/styles/extendedTheme'
 
 describe('Input', () => {
 	it('renders correctly with default props', () => {
-		const { getByTestId } = render(<Input placeholder='Enter text' />)
+		const { getByTestId } = render(<Input.Root placeholder='Enter text' />)
 
 		const input = getByTestId('input-container')
 		expect(input).toBeTruthy()
@@ -15,25 +15,17 @@ describe('Input', () => {
 	})
 
 	it('renders with primary variant by default', () => {
-		const { getByTestId } = render(<Input />)
+		const { getByTestId } = render(<Input.Root />)
 
 		const input = getByTestId('input-container')
 		expect(input.props.variant).toBe('primary')
-	})
-
-	it('renders with secondary variant when specified', () => {
-		const { getByTestId } = render(<Input variant='secondary' />)
-
-		const input = getByTestId('input-container')
-		expect(input.props.variant).toBe('secondary')
-		expect(input.props.placeholderTextColor).toBe(extendedTheme.colors.$title)
 	})
 
 	it('accepts input value', () => {
 		const onChangeTextMock = jest.fn()
 
 		const { getByTestId } = render(
-			<Input value='test value' onChangeText={onChangeTextMock} />,
+			<Input.Root value='test value' onChangeText={onChangeTextMock} />,
 		)
 
 		const input = getByTestId('input-container')
@@ -46,7 +38,7 @@ describe('Input', () => {
 	it('forwards TextInput props correctly', () => {
 		const onFocusMock = jest.fn()
 		const { getByTestId } = render(
-			<Input
+			<Input.Root
 				autoCapitalize='none'
 				secureTextEntry={true}
 				maxLength={10}
@@ -64,7 +56,7 @@ describe('Input', () => {
 	})
 
 	it('has correct default styling props', () => {
-		const { getByTestId } = render(<Input />)
+		const { getByTestId } = render(<Input.Root />)
 
 		const input = getByTestId('input-container')
 
