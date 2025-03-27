@@ -382,7 +382,9 @@ export default function Product() {
 					<InputGroup>
 						<InputGroupHeader hasId={id ? 'true' : 'false'}>
 							{id && <Label>Description</Label>}
-							<MaxCharacters>0 to 60 characters</MaxCharacters>
+							<MaxCharacters>
+								max of {watch('description')?.length || 0}/60 characters
+							</MaxCharacters>
 						</InputGroupHeader>
 
 						<Controller
