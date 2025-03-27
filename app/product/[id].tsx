@@ -4,7 +4,6 @@ import { Photo } from '@/components/ui/photo'
 import extendedTheme from '@/styles/extendedTheme'
 import { styled } from '@fast-styles/react'
 import { LinearGradient } from 'expo-linear-gradient'
-import * as FileSystem from 'expo-file-system'
 import * as mime from 'react-native-mime-types'
 
 import {
@@ -18,13 +17,16 @@ import {
 } from 'react-native'
 import { getStatusBarHeight } from 'react-native-iphone-x-helper'
 import * as ImagePicker from 'expo-image-picker'
-import { useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { InputPrice } from '@/components/ui/input-price'
 import { Input } from '@/components/ui/input'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { supabase } from '@/supabase/supabase'
 import useSWR, { mutate } from 'swr'
 import { fetchPizzaById } from '@/utils/api'
+import { useForm, Controller } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 
 const Container = styled(KeyboardAvoidingView, {
 	flex: 1,
@@ -99,6 +101,21 @@ const GhostView = styled(View, {
 	width: 20,
 })
 
+const productSchema = z.object({
+	name: z.string().min(1, 'Name is required'),
+	description: z
+		.string()
+		.min(1, 'Description is required')
+		.max(60, 'Description must be 60 characters or less'),
+	price_size_s: z.string().min(1, 'Price for size S is required'),
+	price_size_m: z.string().min(1, 'Price for size M is required'),
+	price_size_l: z.string().min(1, 'Price for size L is required'),
+	photo_url: z.string().optional(),
+	photo_path: z.string().optional(),
+})
+
+type ProductFormData = z.infer<typeof productSchema>
+
 export default function Product() {
 	const { id } = useLocalSearchParams()
 	const router = useRouter()
@@ -108,12 +125,43 @@ export default function Product() {
 		fetchPizzaById(pizzaId as string),
 	)
 
-	// Keep only the temporary image state for new uploads
-	const [tempImage, setTempImage] = useState<string | null>(null)
-	const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+	const {
+		control,
+		handleSubmit,
+		setValue,
+		watch,
+		formState: { errors, isSubmitting },
+		reset,
+	} = useForm<ProductFormData>({
+		resolver: zodResolver(productSchema),
+		defaultValues: {
+			name: '',
+			description: '',
+			price_size_s: '',
+			price_size_m: '',
+			price_size_l: '',
+			photo_url: '',
+			photo_path: '',
+		},
+	})
 
-	// Get the current image to display - either from the temporary upload or from the pizza data
-	const currentImage = tempImage || pizza?.photo_url || null
+	// Watch the image URL from the form and memoize it to avoid Reanimated warnings
+	const photoUrl = useMemo(() => watch('photo_url'), [watch('photo_url')])
+
+	// Update form when pizza data is loaded
+	useEffect(() => {
+		if (pizza) {
+			reset({
+				name: pizza.name || '',
+				description: pizza.description || '',
+				price_size_s: pizza.price_size_s ? String(pizza.price_size_s) : '',
+				price_size_m: pizza.price_size_m ? String(pizza.price_size_m) : '',
+				price_size_l: pizza.price_size_l ? String(pizza.price_size_l) : '',
+				photo_url: pizza.photo_url || '',
+				photo_path: pizza.photo_path || '',
+			})
+		}
+	}, [pizza, reset])
 
 	const handleImagePick = async () => {
 		const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
@@ -131,30 +179,22 @@ export default function Product() {
 		})
 
 		if (!result.canceled) {
-			setTempImage(result.assets[0].uri)
+			setValue('photo_url', result.assets[0].uri)
 		}
 	}
 
-	const handleAddPizza = async () => {
-		if (
-			!currentImage ||
-			!pizza?.name.trim() ||
-			!pizza?.description.trim() ||
-			!pizza?.price_size_s ||
-			!pizza?.price_size_m ||
-			!pizza?.price_size_l
-		) {
-			Alert.alert('Validation Error', 'Please fill all fields')
+	const handleAddPizza = async (data: ProductFormData) => {
+		// Fix for TypeError: Cannot read property 'split' of undefined
+		if (!data.photo_url) {
+			Alert.alert('Validation Error', 'Please select an image')
 			return
 		}
 
-		setIsSubmitting(true)
-
 		try {
-			const fileExt = currentImage.split('.').pop()
-			const fileName = `${Date.now()}-${pizza.name.replace(/\s+/g, '-')}.${fileExt}`
+			const fileExt = data.photo_url.split('.').pop() || 'jpg'
+			const fileName = `${Date.now()}-${data.name.replace(/\s+/g, '-')}.${fileExt}`
 
-			const fileUri = currentImage
+			const fileUri = data.photo_url
 			const fileType = mime.lookup(fileUri) || 'image/jpeg'
 
 			const formData = new FormData()
@@ -164,7 +204,7 @@ export default function Product() {
 				type: fileType,
 			} as any) // we cast to any to avoid React Native type issues
 
-			const { data, error } = await supabase.storage
+			const { data: uploadData, error } = await supabase.storage
 				.from('pizzas')
 				.upload(fileName, formData.get('file') as File, {
 					contentType: fileType,
@@ -183,11 +223,11 @@ export default function Product() {
 			const photoUrl = publicUrlData.publicUrl
 
 			const { error: insertError } = await supabase.from('pizzas').insert({
-				name: pizza.name,
-				description: pizza.description,
-				price_size_s: Number.parseFloat(String(pizza.price_size_s)),
-				price_size_m: Number.parseFloat(String(pizza.price_size_m)),
-				price_size_l: Number.parseFloat(String(pizza.price_size_l)),
+				name: data.name,
+				description: data.description,
+				price_size_s: Number.parseFloat(data.price_size_s),
+				price_size_m: Number.parseFloat(data.price_size_m),
+				price_size_l: Number.parseFloat(data.price_size_l),
 				photo_url: photoUrl,
 				photo_path: fileName,
 			})
@@ -208,8 +248,6 @@ export default function Product() {
 		} catch (error) {
 			console.error('Unexpected error:', error)
 			Alert.alert('Error', 'Something went wrong.')
-		} finally {
-			setIsSubmitting(false)
 		}
 	}
 
@@ -218,8 +256,6 @@ export default function Product() {
 			Alert.alert('Error', 'Pizza ID is missing.')
 			return
 		}
-
-		setIsSubmitting(true) // Use the renamed state
 
 		try {
 			const { data: pizzaData, error: fetchError } = await supabase
@@ -266,8 +302,6 @@ export default function Product() {
 		} catch (error: any) {
 			console.error('Delete error:', error)
 			Alert.alert('Error', error.message || 'Something went wrong.')
-		} finally {
-			setIsSubmitting(false) // Use the renamed state
 		}
 	}
 
@@ -292,7 +326,8 @@ export default function Product() {
 				</Header>
 
 				<Upload>
-					<Photo uri={currentImage} />
+					{/* Use a safe way to pass the URI to avoid null errors */}
+					<Photo uri={photoUrl || null} />
 					{!id && (
 						<PickImageButton
 							title='Pick'
@@ -304,21 +339,30 @@ export default function Product() {
 
 				<Form>
 					<InputGroup>
-						<Input.Root
-							value={pizza?.name || ''}
-							onChangeText={(text) => {
-								if (pizza)
-									mutate(`pizza/${pizzaId}`, { ...pizza, name: text }, false)
-							}}
-						>
-							<Input.AnimatedPlaceholder
-								backgroundColor={extendedTheme.colors.$background}
-								color={extendedTheme.colors.$secondary900}
-							>
-								Name
-							</Input.AnimatedPlaceholder>
-							<Input.Trigger />
-						</Input.Root>
+						<Controller
+							control={control}
+							name='name'
+							render={({ field: { onChange, value } }) => (
+								<>
+									<Input.Root value={value} onChangeText={onChange}>
+										<Input.AnimatedPlaceholder
+											backgroundColor={extendedTheme.colors.$background}
+											color={extendedTheme.colors.$secondary900}
+										>
+											Name
+										</Input.AnimatedPlaceholder>
+										<Input.Trigger />
+									</Input.Root>
+									{errors.name && (
+										<MaxCharacters
+											style={{ color: extendedTheme.tokens.$gradientEnd }}
+										>
+											{errors.name.message}
+										</MaxCharacters>
+									)}
+								</>
+							)}
+						/>
 					</InputGroup>
 
 					<InputGroup>
@@ -326,67 +370,87 @@ export default function Product() {
 							<MaxCharacters>0 to 60 characters</MaxCharacters>
 						</InputGroupHeader>
 
-						<Input.Root
-							multiline
-							maxLength={60}
-							style={{ height: 80 }}
-							value={pizza?.description || ''}
-							onChangeText={(text) => {
-								if (pizza)
-									mutate(
-										`pizza/${pizzaId}`,
-										{ ...pizza, description: text },
-										false,
-									)
-							}}
-						>
-							<Input.AnimatedPlaceholder
-								backgroundColor={extendedTheme.colors.$background}
-								color={extendedTheme.colors.$secondary900}
-							>
-								Description
-							</Input.AnimatedPlaceholder>
-							<Input.Trigger />
-						</Input.Root>
+						<Controller
+							control={control}
+							name='description'
+							render={({ field: { onChange, value } }) => (
+								<>
+									<Input.Root
+										multiline
+										maxLength={60}
+										style={{ height: 80 }}
+										value={value}
+										onChangeText={onChange}
+									>
+										<Input.AnimatedPlaceholder
+											backgroundColor={extendedTheme.colors.$background}
+											color={extendedTheme.colors.$secondary900}
+										>
+											Description
+										</Input.AnimatedPlaceholder>
+										<Input.Trigger />
+									</Input.Root>
+									{errors.description && (
+										<MaxCharacters
+											style={{ color: extendedTheme.tokens.$gradientEnd }}
+										>
+											{errors.description.message}
+										</MaxCharacters>
+									)}
+								</>
+							)}
+						/>
 					</InputGroup>
 
 					<InputGroup>
 						<Label>Sizes and prices</Label>
-						<InputPrice
-							size='S'
-							value={pizza?.price_size_s ? String(pizza.price_size_s) : ''}
-							onChangeText={(text) => {
-								if (pizza)
-									mutate(
-										`pizza/${pizzaId}`,
-										{ ...pizza, price_size_s: text },
-										false,
-									)
-							}}
+						<Controller
+							control={control}
+							name='price_size_s'
+							render={({ field: { onChange, value } }) => (
+								<>
+									<InputPrice size='S' value={value} onChangeText={onChange} />
+									{errors.price_size_s && (
+										<MaxCharacters
+											style={{ color: extendedTheme.tokens.$gradientEnd }}
+										>
+											{errors.price_size_s.message}
+										</MaxCharacters>
+									)}
+								</>
+							)}
 						/>
-						<InputPrice
-							size='M'
-							value={pizza?.price_size_m ? String(pizza.price_size_m) : ''}
-							onChangeText={(text) => {
-								if (pizza)
-									mutate(
-										`pizza/${pizzaId}`,
-										{ ...pizza, price_size_m: text },
-										false,
-									)
-							}}
+						<Controller
+							control={control}
+							name='price_size_m'
+							render={({ field: { onChange, value } }) => (
+								<>
+									<InputPrice size='M' value={value} onChangeText={onChange} />
+									{errors.price_size_m && (
+										<MaxCharacters
+											style={{ color: extendedTheme.tokens.$gradientEnd }}
+										>
+											{errors.price_size_m.message}
+										</MaxCharacters>
+									)}
+								</>
+							)}
 						/>
-						<InputPrice
-							size='L'
-							value={pizza?.price_size_l ? String(pizza.price_size_l) : ''}
-							onChangeText={(text) => {
-								if (pizza)
-									mutate(
-										`pizza/${pizzaId}`,
-										{ ...pizza, price_size_l: text },
-										false,
-									)
-							}}
+						<Controller
+							control={control}
+							name='price_size_l'
+							render={({ field: { onChange, value } }) => (
+								<>
+									<InputPrice size='L' value={value} onChangeText={onChange} />
+									{errors.price_size_l && (
+										<MaxCharacters
+											style={{ color: extendedTheme.tokens.$gradientEnd }}
+										>
+											{errors.price_size_l.message}
+										</MaxCharacters>
+									)}
+								</>
+							)}
 						/>
 					</InputGroup>
 
@@ -394,8 +458,8 @@ export default function Product() {
 						<Button
 							title='Register pizza'
 							variant='secondary'
-							loading={isSubmitting} // Use the renamed state
-							onPress={handleAddPizza}
+							loading={isSubmitting}
+							onPress={handleSubmit(handleAddPizza)}
 						/>
 					)}
 				</Form>
