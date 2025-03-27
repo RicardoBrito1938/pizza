@@ -161,15 +161,15 @@ export default function Product() {
 
 	// Update form when pizza data is loaded
 	useEffect(() => {
-		if (pizza) {
+		if (pizza && !!pizza?.photo_url) {
 			reset({
-				name: pizza.name || '',
-				description: pizza.description || '',
-				price_size_s: pizza.price_size_s ? String(pizza.price_size_s) : '',
-				price_size_m: pizza.price_size_m ? String(pizza.price_size_m) : '',
-				price_size_l: pizza.price_size_l ? String(pizza.price_size_l) : '',
-				photo_url: pizza.photo_url || '',
-				photo_path: pizza.photo_path || '',
+				name: pizza.name,
+				description: pizza.description,
+				price_size_s: String(pizza.price_size_s),
+				price_size_m: String(pizza.price_size_m),
+				price_size_l: String(pizza.price_size_l),
+				photo_url: pizza.photo_url,
+				photo_path: pizza.photo_path,
 			})
 		}
 	}, [pizza, reset])
@@ -316,6 +316,9 @@ export default function Product() {
 		}
 	}
 
+	console.log({ photoUrl })
+	console.log('je;pppas;jfasjkldflkajsdfkljasd')
+
 	return (
 		<Container behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
 			<ScrollView showsVerticalScrollIndicator={false}>
@@ -337,8 +340,7 @@ export default function Product() {
 				</Header>
 
 				<Upload>
-					{/* Use a safe way to pass the URI to avoid null errors */}
-					<Photo uri={photoUrl || null} />
+					<Photo uri={photoUrl} />
 					{!id && (
 						<PickImageButton
 							title='Pick'

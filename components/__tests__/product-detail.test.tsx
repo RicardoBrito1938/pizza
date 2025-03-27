@@ -15,8 +15,6 @@ jest.mock('expo-router', () => ({
 
 describe('Product Detail Screen', () => {
 	it('renders the product page with mocked ID parameter', () => {
-		const { getByText, getAllByText, getByTestId } = render(<Product />)
-
 		// Now your test can expect the component to use the mocked 'id' parameter
 		// Add assertions based on how your component should behave with this ID
 	})

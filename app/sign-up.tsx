@@ -11,6 +11,7 @@ import {
 import extendedTheme from '@/styles/extendedTheme'
 import { Button } from '@/components/ui/button'
 import { getBottomSpace } from 'react-native-iphone-x-helper'
+import brandImg from '@/assets/images/brand.png'
 import { Checkbox } from '@/components/ui/checkbox'
 import { fetchUser, registerUser } from '@/utils/auth'
 import useSWR from 'swr'
@@ -55,9 +56,10 @@ const Brand = styled(Image, {
 
 	attributes: {
 		resizeMode: 'contain',
-		source: {
-			uri: 'https://www.kindpng.com/picc/m/95-954719_pizza-chef-vector-italian-pizza-chef-png-transparent.png',
-		},
+		// source: {
+		// 	uri: 'https://www.kindpng.com/picc/m/95-954719_pizza-chef-vector-italian-pizza-chef-png-transparent.png',
+		// },
+		source: brandImg,
 	},
 })
 
