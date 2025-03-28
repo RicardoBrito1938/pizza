@@ -14,7 +14,7 @@ import { getBottomSpace } from 'react-native-iphone-x-helper'
 import brandImg from '@/assets/images/brand.png'
 import { Checkbox } from '@/components/ui/checkbox'
 import { fetchUser, registerUser } from '@/utils/auth'
-import useSWR from 'swr'
+import { useQueryClient, useMutation } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
@@ -133,22 +133,43 @@ export default function SignUp() {
 		},
 	})
 	const [isAdmin, setIsAdmin] = useState(false)
-	const { mutate } = useSWR('/user', fetchUser)
+	const queryClient = useQueryClient()
 	const router = useRouter()
+
+	const registerMutation = useMutation({
+		mutationFn: async (data: {
+			name: string
+			email: string
+			password: string
+		}) => {
+			const result = await registerUser(data.email, data.password, data.name)
+			if (!result.success || !result.user) {
+				throw new Error('Failed to register user')
+			}
+			return result.user
+		},
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: ['user'] })
+			router.replace('/sign-in')
+			Alert.alert(
+				'Success',
+				'An email has been sent to your email address for verification',
+			)
+		},
+		onError: (error) => {
+			Alert.alert(
+				'Registration Error',
+				error.message || 'Failed to register user',
+			)
+		},
+	})
 
 	const handleRegister = async (data: {
 		name: string
 		email: string
 		password: string
 	}) => {
-		const result = await registerUser(data.email, data.password, data.name)
-
-		if (result.success && result.user) {
-			await mutate()
-			router.replace('/(admin)/home')
-		} else {
-			Alert.alert('Registration Error', 'Failed to register user')
-		}
+		registerMutation.mutate(data)
 	}
 
 	return (
@@ -274,10 +295,11 @@ export default function SignUp() {
 						<CheckboxLabel>Admin</CheckboxLabel>
 					</CheckboxContainer>
 					<Button
-						title='Sign Up'
+						title={registerMutation.isPending ? 'Signing up...' : 'Sign Up'}
 						variant='primary'
 						onPress={handleSubmit(handleRegister)}
 						testID='sign-up-button'
+						disabled={registerMutation.isPending}
 					/>
 				</Content>
 			</AvoidingView>

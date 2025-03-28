@@ -1,17 +1,46 @@
 import { render, fireEvent, waitFor } from '@testing-library/react-native'
 import SignUp from '@/app/sign-up'
-import React from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-jest.mock('swr', () => ({
-	__esModule: true,
-	default: jest.fn().mockReturnValue({
-		mutate: jest.fn().mockResolvedValue(undefined),
-	}),
-}))
+// Mock TanStack Query instead of SWR
+jest.mock('@tanstack/react-query', () => {
+	const originalModule = jest.requireActual('@tanstack/react-query')
+
+	return {
+		__esModule: true,
+		...originalModule,
+		useMutation: jest.fn().mockImplementation(({ onSuccess }) => ({
+			mutate: jest.fn().mockImplementation(() => {
+				if (onSuccess) onSuccess()
+			}),
+			isPending: false,
+		})),
+		useQueryClient: jest.fn().mockReturnValue({
+			invalidateQueries: jest.fn().mockResolvedValue(undefined),
+		}),
+	}
+})
+
+// Helper function to render with query client
+const renderWithQueryClient = (ui: React.ReactElement) => {
+	const queryClient = new QueryClient({
+		defaultOptions: {
+			queries: {
+				retry: false,
+			},
+		},
+	})
+
+	return render(
+		<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+	)
+}
 
 describe('SignUp Screen', () => {
 	it('renders the sign-up page', () => {
-		const { getByText, getAllByText, getByTestId } = render(<SignUp />)
+		const { getByText, getAllByText, getByTestId } = renderWithQueryClient(
+			<SignUp />,
+		)
 
 		const signUpElements = getAllByText('Sign Up')
 		const signUpButton = getByTestId('sign-up-button')
@@ -28,7 +57,7 @@ describe('SignUp Screen', () => {
 	})
 
 	it('displays validation errors when form is submitted with empty inputs', async () => {
-		const { getByTestId, findByText } = render(<SignUp />)
+		const { getByTestId, findByText } = renderWithQueryClient(<SignUp />)
 
 		// Get the sign-up button and press it without filling the form
 		const signUpButton = getByTestId('sign-up-button')
@@ -43,7 +72,7 @@ describe('SignUp Screen', () => {
 	})
 
 	it('allows entering text in form fields', async () => {
-		const { getByText } = render(<SignUp />)
+		const { getByText } = renderWithQueryClient(<SignUp />)
 
 		// Find the input fields by their labels
 		const nameLabel = getByText('Name')
@@ -73,7 +102,7 @@ describe('SignUp Screen', () => {
 	})
 
 	it('toggles the admin checkbox when pressed', () => {
-		const { getByText } = render(<SignUp />)
+		const { getByText } = renderWithQueryClient(<SignUp />)
 
 		const adminCheckboxLabel = getByText('Admin')
 		fireEvent.press(adminCheckboxLabel)
