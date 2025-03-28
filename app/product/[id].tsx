@@ -17,7 +17,7 @@ import {
 } from 'react-native'
 import { getStatusBarHeight } from 'react-native-iphone-x-helper'
 import * as ImagePicker from 'expo-image-picker'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { InputPrice } from '@/components/ui/input-price'
 import { Input } from '@/components/ui/input'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -133,7 +133,10 @@ export default function Product() {
 	const pizzaId = id ? String(id) : null
 	const queryClient = useQueryClient()
 
-	const { data: pizza } = useQuery({
+	// State to hold the image URL to avoid reanimated warnings
+	const [photoUrl, setPhotoUrl] = useState<string>('')
+
+	const { data: pizza, isLoading } = useQuery({
 		queryKey: ['pizza', pizzaId],
 		queryFn: () => fetchPizzaById(pizzaId as string),
 		enabled: !!pizzaId,
@@ -159,8 +162,15 @@ export default function Product() {
 		},
 	})
 
-	// Watch the image URL from the form and memoize it to avoid Reanimated warnings
-	const photoUrl = useMemo(() => watch('photo_url'), [watch])
+	// Watch for form changes
+	const formPhotoUrl = watch('photo_url')
+
+	// Update local state when form photo URL changes
+	useEffect(() => {
+		if (formPhotoUrl) {
+			setPhotoUrl(formPhotoUrl)
+		}
+	}, [formPhotoUrl])
 
 	// Update form when pizza data is loaded
 	useEffect(() => {
@@ -174,6 +184,9 @@ export default function Product() {
 				photo_url: pizza.photo_url,
 				photo_path: pizza.photo_path,
 			})
+
+			// Explicitly set the photo URL to the state as well
+			setPhotoUrl(pizza.photo_url)
 		}
 	}, [pizza, reset])
 
@@ -181,19 +194,24 @@ export default function Product() {
 		const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
 
 		if (status !== 'granted') {
-			alert('Sorry, we need camera roll permissions to make this work!')
+			Alert.alert(
+				'Permission Required',
+				'Sorry, we need camera roll permissions to make this work!',
+			)
 			return
 		}
 
 		const result = await ImagePicker.launchImageLibraryAsync({
-			mediaTypes: 'images',
+			mediaTypes: ImagePicker.MediaTypeOptions.Images,
 			allowsEditing: true,
 			aspect: [4, 3],
 			quality: 1,
 		})
 
-		if (!result.canceled) {
-			setValue('photo_url', result.assets[0].uri)
+		if (!result.canceled && result.assets && result.assets.length > 0) {
+			const selectedImageUri = result.assets[0].uri
+			setValue('photo_url', selectedImageUri)
+			setPhotoUrl(selectedImageUri)
 		}
 	}
 
@@ -318,6 +336,23 @@ export default function Product() {
 		}
 
 		deletePizzaMutation.mutate(String(id))
+	}
+
+	if (isLoading) {
+		return (
+			<Container>
+				<Header
+					colors={[
+						extendedTheme.tokens.$gradientStart,
+						extendedTheme.tokens.$gradientEnd,
+					]}
+				>
+					<ButtonBack />
+					<Title>Loading...</Title>
+					<GhostView />
+				</Header>
+			</Container>
+		)
 	}
 
 	return (
