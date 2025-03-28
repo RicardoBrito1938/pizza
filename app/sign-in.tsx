@@ -13,11 +13,9 @@ import extendedTheme from '@/styles/extendedTheme'
 import { Button } from '@/components/ui/button'
 import { getBottomSpace } from 'react-native-iphone-x-helper'
 import brandImg from '@/assets/images/brand.png'
-import { useState } from 'react'
 import { SplashScreen, useRouter } from 'expo-router'
 import { supabase } from '@/supabase/supabase'
-import useSWR from 'swr'
-import { fetchUser } from '@/utils/auth'
+import { useQueryClient, useMutation } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -130,44 +128,61 @@ export default function SignIn() {
 			password: '',
 		},
 	})
-	const [isLoading, setIsLoading] = useState(false)
 
 	const router = useRouter()
-	const { mutate } = useSWR('/user', fetchUser)
+	const queryClient = useQueryClient()
+
+	const signInMutation = useMutation({
+		mutationFn: async (data: { email: string; password: string }) => {
+			const { email, password } = data
+			const { data: authData, error: authError } =
+				await supabase.auth.signInWithPassword({
+					email,
+					password,
+				})
+
+			if (authError) {
+				throw new Error(authError.message || 'Authentication failed')
+			}
+
+			return authData
+		},
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: ['user'] })
+			router.navigate('/(admin)/home')
+		},
+		onError: (error: Error) => {
+			Alert.alert('Login Error', error.message || 'Authentication failed')
+		},
+	})
 
 	const handleSignIn = async (data: { email: string; password: string }) => {
-		setIsLoading(true)
-
-		const { email, password } = data
-		const { error: authError } = await supabase.auth.signInWithPassword({
-			email,
-			password,
-		})
-
-		if (authError) {
-			Alert.alert('Login Error', authError.message || 'Authentication failed')
-			setIsLoading(false)
-			return
-		}
-
-		await mutate()
-		setIsLoading(false)
-		router.navigate('/(admin)/home')
+		signInMutation.mutate(data)
 	}
 
-	const handleForgotPassword = async (email: string) => {
-		if (!email) {
-			Alert.alert('Forgot Password', 'Email is required')
-			return
-		}
+	const forgotPasswordMutation = useMutation({
+		mutationFn: async (email: string) => {
+			if (!email) {
+				throw new Error('Email is required')
+			}
 
-		const { error } = await supabase.auth.resetPasswordForEmail(email)
-		if (error) {
+			const { error } = await supabase.auth.resetPasswordForEmail(email)
+			if (error) {
+				throw new Error(error.message || 'Password reset failed')
+			}
+
+			return true
+		},
+		onSuccess: () => {
+			Alert.alert('Forgot Password', 'Password reset email sent')
+		},
+		onError: (error: Error) => {
 			Alert.alert('Forgot Password', error.message || 'Password reset failed')
-			return
-		}
+		},
+	})
 
-		Alert.alert('Forgot Password', 'Password reset email sent')
+	const handleForgotPassword = async (email: string) => {
+		forgotPasswordMutation.mutate(email)
 	}
 
 	return (
@@ -237,6 +252,7 @@ export default function SignIn() {
 						/>
 						<ForgotPasswordButton
 							onPress={() => handleForgotPassword(getValues('email'))}
+							disabled={forgotPasswordMutation.isPending}
 						>
 							<ForgotPasswordText>Forgot password?</ForgotPasswordText>
 						</ForgotPasswordButton>
@@ -246,7 +262,7 @@ export default function SignIn() {
 							title='Sign in'
 							variant='secondary'
 							onPress={handleSubmit(handleSignIn)}
-							loading={isLoading}
+							loading={signInMutation.isPending}
 						/>
 					</ButtonsContainer>
 					<Pressable onPress={() => router.push('/sign-up')}>
