@@ -98,10 +98,6 @@ const AvoidingView = styled(KeyboardAvoidingView, {
 const ErrorText = styled(Text, {
 	color: 'gold',
 	fontSize: 12,
-	fontWeight: 'bold',
-	textShadowColor: 'rgba(0, 0, 0, 0.5)',
-	textShadowOffset: { width: 1, height: 1 },
-	textShadowRadius: 1,
 	alignSelf: 'flex-start',
 })
 
