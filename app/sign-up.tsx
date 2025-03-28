@@ -147,10 +147,6 @@ export default function SignUp() {
 		onSuccess: async () => {
 			await queryClient.invalidateQueries({ queryKey: ['user'] })
 			router.replace('/sign-in')
-			Alert.alert(
-				'Success',
-				'An email has been sent to your email address for verification',
-			)
 		},
 		onError: (error) => {
 			Alert.alert(
