@@ -1,7 +1,7 @@
 import { render, waitFor } from '@testing-library/react-native'
 import Orders from '@/app/(admin)/orders'
 import { Alert } from 'react-native'
-import { SWRConfig } from 'swr'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // Create mock data
 const mockOrders = [
@@ -41,6 +41,28 @@ const mockChannel = {
 	subscribe: mockSubscribe,
 }
 
+// Mock TanStack Query
+jest.mock('@tanstack/react-query', () => {
+	const originalModule = jest.requireActual('@tanstack/react-query')
+
+	return {
+		__esModule: true,
+		...originalModule,
+		useQuery: jest.fn().mockReturnValue({
+			data: mockOrders,
+			isLoading: false,
+			error: null,
+		}),
+		useMutation: jest.fn().mockReturnValue({
+			mutate: jest.fn(),
+			isPending: false,
+		}),
+		useQueryClient: jest.fn().mockReturnValue({
+			invalidateQueries: jest.fn(),
+		}),
+	}
+})
+
 // Resolve the promise with mockOrders data
 const mockSelectResponse = {
 	data: mockOrders,
@@ -56,23 +78,8 @@ const mockFrom = jest.fn().mockImplementation(() => ({
 		data: { status: 'preparing' },
 		error: null,
 	}),
-	// biome-ignore lint/suspicious/noThenProperty: <explanation>
 	then: jest.fn((callback) => Promise.resolve(callback(mockSelectResponse))),
 }))
-
-// Mock the fetchOrders SWR fetcher function
-jest.mock('@/app/(admin)/orders', () => {
-	const originalModule = jest.requireActual('@/app/(admin)/orders')
-
-	// Override the fetchOrders function to immediately return mock data
-	const mockedModule = {
-		...originalModule,
-		__esModule: true,
-		default: originalModule.default,
-	}
-
-	return mockedModule
-})
 
 // This pattern helps avoid the "from is not a function" error
 jest.mock('@/supabase/supabase', () => {
@@ -85,18 +92,33 @@ jest.mock('@/supabase/supabase', () => {
 	}
 })
 
+// Helper function to render with QueryClient
+const renderWithQueryClient = (ui: React.ReactElement) => {
+	const queryClient = new QueryClient({
+		defaultOptions: {
+			queries: {
+				retry: false,
+			},
+		},
+		logger: {
+			log: console.log,
+			warn: console.warn,
+			error: () => {},
+		},
+	})
+
+	return render(
+		<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+	)
+}
+
 describe('Orders Page', () => {
 	beforeEach(() => {
 		jest.clearAllMocks()
 	})
 
 	it('renders correctly with orders header', async () => {
-		// Render with SWR config that uses a static cache
-		const { getByText } = render(
-			<SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
-				<Orders />
-			</SWRConfig>,
-		)
+		const { getByText } = renderWithQueryClient(<Orders />)
 
 		// Use waitFor to ensure state updates are complete
 		await waitFor(() => {
@@ -105,24 +127,13 @@ describe('Orders Page', () => {
 	})
 
 	it('mocks supabase from properly', async () => {
-		// Render with SWR config to force bypass caching
-		render(
-			<SWRConfig
-				value={{
-					provider: () => new Map(),
-					dedupingInterval: 0,
-					suspense: false,
-				}}
-			>
-				<Orders />
-			</SWRConfig>,
-		)
+		renderWithQueryClient(<Orders />)
 
 		// Wait for all promises to resolve with a longer timeout
 		await waitFor(
 			() => {
-				// Verify the supabase mock works
-				expect(mockFrom).toHaveBeenCalled()
+				// Verify the useQuery hook is called
+				expect(require('@tanstack/react-query').useQuery).toHaveBeenCalled()
 			},
 			{ timeout: 3000 },
 		)
