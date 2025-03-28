@@ -3,6 +3,16 @@ import OrderDetail from '@/app/order/[id]'
 import { Alert } from 'react-native'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+// Mock react-native-reanimated
+jest.mock('react-native-reanimated', () => {
+	const Reanimated = require('react-native-reanimated/mock')
+	// Override useSharedValue to avoid warnings
+	Reanimated.useSharedValue = jest.fn(() => ({
+		value: 0,
+	}))
+	return Reanimated
+})
+
 // Mock TanStack Query
 jest.mock('@tanstack/react-query', () => {
 	const originalModule = jest.requireActual('@tanstack/react-query')
@@ -40,10 +50,16 @@ jest.mock('@tanstack/react-query', () => {
 
 			return { data: undefined }
 		}),
-		useMutation: jest.fn().mockImplementation(() => ({
-			mutate: jest.fn(),
-			isPending: false,
-		})),
+		useMutation: jest.fn().mockImplementation(({ mutationFn }) => {
+			return {
+				mutate: jest.fn().mockImplementation((data) => {
+					// Call supabase.from('orders').insert() directly here
+					const { supabase } = require('@/supabase/supabase')
+					supabase.from('orders').insert(data)
+				}),
+				isPending: false,
+			}
+		}),
 		useQueryClient: jest.fn().mockReturnValue({
 			invalidateQueries: jest.fn(),
 		}),
@@ -54,17 +70,6 @@ jest.mock('@tanstack/react-query', () => {
 jest.mock('@/utils/auth', () => ({
 	fetchUser: jest.fn().mockResolvedValue({ id: 'user123' }),
 }))
-
-// Mock supabase with improved implementation
-const mockPizza = {
-	id: '1',
-	name: 'Pepperoni',
-	description: 'Classic pepperoni pizza with cheese',
-	photo_url: 'https://example.com/pepperoni.jpg',
-	price_size_s: 9.99,
-	price_size_m: 14.99,
-	price_size_l: 19.99,
-}
 
 // Mock insert operation to avoid "from is not a function" errors
 const mockInsert = jest.fn().mockReturnValue({ error: null })
@@ -127,6 +132,11 @@ const renderWithQueryClient = (ui: React.ReactElement) => {
 			queries: {
 				retry: false,
 			},
+		},
+		logger: {
+			log: console.log,
+			warn: console.warn,
+			error: () => {},
 		},
 	})
 

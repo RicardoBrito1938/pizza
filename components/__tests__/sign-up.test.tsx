@@ -1,4 +1,4 @@
-import { render, fireEvent } from '@testing-library/react-native'
+import { render, fireEvent, waitFor } from '@testing-library/react-native'
 import SignUp from '@/app/sign-up'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
@@ -49,13 +49,15 @@ describe('SignUp Screen', () => {
 
 		const signUpElements = getAllByText('Sign Up')
 		const signUpButton = getByTestId('sign-up-button')
-		expect(signUpElements.length).toBeGreaterThan(0)
-		expect(getByText('Admin')).toBeTruthy()
-		expect(getByText('Name')).toBeTruthy()
-		expect(getByText('E-mail')).toBeTruthy()
-		expect(getByText('Password')).toBeTruthy()
-		expect(getByText('Confirm password')).toBeTruthy()
-		expect(signUpButton).toBeTruthy()
+		waitFor(() => {
+			expect(signUpElements.length).toBeGreaterThan(0)
+			expect(getByText('Admin')).toBeTruthy()
+			expect(getByText('Name')).toBeTruthy()
+			expect(getByText('E-mail')).toBeTruthy()
+			expect(getByText('Password')).toBeTruthy()
+			expect(getByText('Confirm password')).toBeTruthy()
+			expect(signUpButton).toBeTruthy()
+		})
 	})
 
 	it('displays validation errors when form is submitted with empty inputs', () => {
