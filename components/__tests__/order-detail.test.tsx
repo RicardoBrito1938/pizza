@@ -1,16 +1,54 @@
 import { render, fireEvent, act, waitFor } from '@testing-library/react-native'
 import OrderDetail from '@/app/order/[id]'
 import { Alert } from 'react-native'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-// Mock SWR instead of hooks/auth
-jest.mock('swr', () => ({
-	__esModule: true,
-	default: jest.fn(() => ({
-		data: { id: 'user123' },
-		error: null,
-		isLoading: false,
-	})),
-}))
+// Mock TanStack Query
+jest.mock('@tanstack/react-query', () => {
+	const originalModule = jest.requireActual('@tanstack/react-query')
+
+	return {
+		__esModule: true,
+		...originalModule,
+		useQuery: jest.fn().mockImplementation(({ queryKey }) => {
+			if (queryKey[0] === 'user') {
+				return {
+					data: { id: 'user123' },
+					error: null,
+					isLoading: false,
+				}
+			}
+
+			if (queryKey[0] === 'pizza') {
+				return {
+					data: {
+						id: '1',
+						name: 'Pepperoni',
+						description: 'Classic pepperoni pizza with cheese',
+						photo_url: 'https://example.com/pepperoni.jpg',
+						price_size_s: 9.99,
+						price_size_m: 14.99,
+						price_size_l: 19.99,
+						price_sizes: {
+							S: 9.99,
+							M: 14.99,
+							L: 19.99,
+						},
+					},
+				}
+			}
+
+			return { data: undefined }
+		}),
+		useMutation: jest.fn().mockImplementation(() => ({
+			mutate: jest.fn(),
+			isPending: false,
+		})),
+		useQueryClient: jest.fn().mockReturnValue({
+			invalidateQueries: jest.fn(),
+		}),
+	}
+})
 
 // Mock fetchUser utility
 jest.mock('@/utils/auth', () => ({
@@ -53,7 +91,6 @@ const mockFrom = jest.fn().mockImplementation((table) => {
 
 jest.mock('@/supabase/supabase', () => ({
 	supabase: {
-		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		from: (table: any) => mockFrom(table),
 	},
 }))
@@ -83,13 +120,28 @@ jest.mock('@/utils/pizza-types', () => ({
 	],
 }))
 
+// Helper function to render with query client
+const renderWithQueryClient = (ui: React.ReactElement) => {
+	const queryClient = new QueryClient({
+		defaultOptions: {
+			queries: {
+				retry: false,
+			},
+		},
+	})
+
+	return render(
+		<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+	)
+}
+
 describe('Order Detail Page', () => {
 	beforeEach(() => {
 		jest.clearAllMocks()
 	})
 
 	it('renders basic UI elements', async () => {
-		const { getByTestId, getByText } = render(<OrderDetail />)
+		const { getByTestId, getByText } = renderWithQueryClient(<OrderDetail />)
 
 		// Wait for the component to load
 		await waitFor(() => {
@@ -102,7 +154,7 @@ describe('Order Detail Page', () => {
 	})
 
 	it('shows radio buttons for sizes', async () => {
-		const { getAllByTestId } = render(<OrderDetail />)
+		const { getAllByTestId } = renderWithQueryClient(<OrderDetail />)
 
 		// Wait for the component to load
 		await waitFor(() => {
@@ -112,7 +164,9 @@ describe('Order Detail Page', () => {
 	})
 
 	it('selects a size when radio button is pressed', async () => {
-		const { getAllByTestId, queryByTestId } = render(<OrderDetail />)
+		const { getAllByTestId, queryByTestId } = renderWithQueryClient(
+			<OrderDetail />,
+		)
 
 		// Wait for the component to load
 		await waitFor(() => {
@@ -132,7 +186,7 @@ describe('Order Detail Page', () => {
 	})
 
 	it('shows validation when submitting with missing fields', async () => {
-		const { getByText } = render(<OrderDetail />)
+		const { getByText } = renderWithQueryClient(<OrderDetail />)
 
 		// Try to submit without filling anything
 		act(() => {
@@ -146,9 +200,8 @@ describe('Order Detail Page', () => {
 	})
 
 	it('calls supabase when submitting order with all fields', async () => {
-		const { getAllByTestId, getByText, getAllByPlaceholderText } = render(
-			<OrderDetail />,
-		)
+		const { getAllByTestId, getByText, getAllByPlaceholderText } =
+			renderWithQueryClient(<OrderDetail />)
 
 		// Select medium size
 		const radioButtons = getAllByTestId('radio-button-container')
@@ -178,7 +231,7 @@ describe('Order Detail Page', () => {
 	})
 
 	it('goes back when back button is pressed', async () => {
-		const { getByTestId } = render(<OrderDetail />)
+		const { getByTestId } = renderWithQueryClient(<OrderDetail />)
 
 		// Press back button
 		act(() => {

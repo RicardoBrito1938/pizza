@@ -11,7 +11,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/supabase/supabase'
 import { type Route, useRouter } from 'expo-router'
-import useSWR from 'swr'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchUser } from '@/utils/auth'
 import { fetchPizzas } from '@/utils/api'
 
@@ -78,29 +78,41 @@ const Body = styled(View, {
 })
 
 export default function Home() {
-	const { data: user, mutate: mutateUser } = useSWR('/user', fetchUser)
+	const { data: user } = useQuery({
+		queryKey: ['user'],
+		queryFn: fetchUser,
+	})
+
 	const router = useRouter()
 	const [searchValue, setSearchValue] = useState('')
+	const queryClient = useQueryClient()
 
-	// Using SWR to fetch pizzas with the search value as a key
-	const { data: pizzas = [], mutate: mutatePizzas } = useSWR(
-		['pizzas', searchValue],
-		() => fetchPizzas(searchValue),
-		{
-			revalidateOnFocus: true,
-			dedupingInterval: 2000,
+	// Using TanStack Query to fetch pizzas with the search value as a parameter
+	const { data: pizzas = [] } = useQuery({
+		queryKey: ['pizzas', searchValue],
+		queryFn: () => fetchPizzas(searchValue),
+		staleTime: 1000 * 60 * 5, // 5 minutes
+	})
+
+	const signOutMutation = useMutation({
+		mutationFn: async () => {
+			const { error } = await supabase.auth.signOut()
+			if (error) {
+				throw new Error(error.message || 'Sign out failed')
+			}
+			return true
 		},
-	)
-
-	const handleSignOut = async () => {
-		const { error } = await supabase.auth.signOut()
-		if (error) {
+		onSuccess: () => {
+			queryClient.setQueryData(['user'], null)
+			router.navigate('/sign-in')
+		},
+		onError: (error: Error) => {
 			Alert.alert('Sign Out Error', error.message || 'Sign out failed')
-			return
-		}
+		},
+	})
 
-		await mutateUser(null, false) // Update the SWR cache
-		router.navigate('/sign-in')
+	const handleSignOut = () => {
+		signOutMutation.mutate()
 	}
 
 	const handleClear = () => {

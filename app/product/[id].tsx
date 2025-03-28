@@ -22,7 +22,7 @@ import { InputPrice } from '@/components/ui/input-price'
 import { Input } from '@/components/ui/input'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { supabase } from '@/supabase/supabase'
-import useSWR, { mutate } from 'swr'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchPizzaById } from '@/utils/api'
 import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
@@ -131,17 +131,20 @@ export default function Product() {
 	const { id } = useLocalSearchParams()
 	const router = useRouter()
 	const pizzaId = id ? String(id) : null
+	const queryClient = useQueryClient()
 
-	const { data: pizza } = useSWR(pizzaId ? `pizza/${pizzaId}` : null, () =>
-		fetchPizzaById(pizzaId as string),
-	)
+	const { data: pizza } = useQuery({
+		queryKey: ['pizza', pizzaId],
+		queryFn: () => fetchPizzaById(pizzaId as string),
+		enabled: !!pizzaId,
+	})
 
 	const {
 		control,
 		handleSubmit,
 		setValue,
 		watch,
-		formState: { errors, isSubmitting },
+		formState: { errors },
 		reset,
 	} = useForm<ProductFormData>({
 		resolver: zodResolver(productSchema),
@@ -194,14 +197,12 @@ export default function Product() {
 		}
 	}
 
-	const handleAddPizza = async (data: ProductFormData) => {
-		// Fix for TypeError: Cannot read property 'split' of undefined
-		if (!data.photo_url) {
-			Alert.alert('Validation Error', 'Please select an image')
-			return
-		}
+	const addPizzaMutation = useMutation({
+		mutationFn: async (data: ProductFormData) => {
+			if (!data.photo_url) {
+				throw new Error('Please select an image')
+			}
 
-		try {
 			const fileExt = data.photo_url.split('.').pop() || 'jpg'
 			const fileName = `${Date.now()}-${data.name.replace(/\s+/g, '-')}.${fileExt}`
 
@@ -222,9 +223,7 @@ export default function Product() {
 				})
 
 			if (error) {
-				console.error('Upload error:', error)
-				Alert.alert('Error', 'Image upload failed.')
-				return
+				throw new Error(`Image upload failed: ${error.message}`)
 			}
 
 			const { data: publicUrlData } = supabase.storage
@@ -244,35 +243,28 @@ export default function Product() {
 			})
 
 			if (insertError) {
-				Alert.alert('Error', `Error saving pizza: ${insertError.message}`)
-				return
+				throw new Error(`Error saving pizza: ${insertError.message}`)
 			}
 
-			// Invalidate the pizzas cache to refresh the list
-			mutate(
-				(key) => typeof key === 'string' && key.startsWith('pizzas'),
-				undefined,
-				{ revalidate: true },
-			)
+			return true
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['pizzas'] })
 			Alert.alert('Success', 'Pizza added successfully!')
 			router.back()
-		} catch (error) {
+		},
+		onError: (error: Error) => {
 			console.error('Unexpected error:', error)
-			Alert.alert('Error', 'Something went wrong.')
-		}
-	}
+			Alert.alert('Error', error.message || 'Something went wrong.')
+		},
+	})
 
-	const handleDeletePizza = async () => {
-		if (!id) {
-			Alert.alert('Error', 'Pizza ID is missing.')
-			return
-		}
-
-		try {
+	const deletePizzaMutation = useMutation({
+		mutationFn: async (pizzaId: string) => {
 			const { data: pizzaData, error: fetchError } = await supabase
 				.from('pizzas')
 				.select('photo_path')
-				.eq('id', id)
+				.eq('id', pizzaId)
 				.single()
 
 			if (fetchError || !pizzaData) {
@@ -291,7 +283,7 @@ export default function Product() {
 				}
 			}
 
-			const formattedId = String(id).trim()
+			const formattedId = String(pizzaId).trim()
 
 			const { error: deletePizzaError } = await supabase
 				.from('pizzas')
@@ -302,22 +294,31 @@ export default function Product() {
 				throw new Error(`Failed to delete pizza: ${deletePizzaError.message}`)
 			}
 
-			// Invalidate the pizzas cache to refresh the list
-			mutate(
-				(key) => typeof key === 'string' && key.startsWith('pizzas'),
-				undefined,
-				{ revalidate: true },
-			)
+			return true
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['pizzas'] })
 			Alert.alert('Success', 'Pizza deleted successfully!')
 			router.back()
-		} catch (error: any) {
+		},
+		onError: (error: Error) => {
 			console.error('Delete error:', error)
 			Alert.alert('Error', error.message || 'Something went wrong.')
-		}
+		},
+	})
+
+	const handleAddPizza = (data: ProductFormData) => {
+		addPizzaMutation.mutate(data)
 	}
 
-	console.log({ photoUrl })
-	console.log('je;pppas;jfasjkldflkajsdfkljasd')
+	const handleDeletePizza = () => {
+		if (!id) {
+			Alert.alert('Error', 'Pizza ID is missing.')
+			return
+		}
+
+		deletePizzaMutation.mutate(String(id))
+	}
 
 	return (
 		<Container behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -479,7 +480,7 @@ export default function Product() {
 						<Button
 							title='Register pizza'
 							variant='secondary'
-							loading={isSubmitting}
+							loading={addPizzaMutation.isPending}
 							onPress={handleSubmit(handleAddPizza)}
 						/>
 					)}

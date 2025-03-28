@@ -7,7 +7,7 @@ import { Alert, FlatList, Text, View } from 'react-native'
 import { useCallback, useEffect } from 'react'
 import { supabase } from '@/supabase/supabase'
 import { getStatusBarHeight } from 'react-native-iphone-x-helper'
-import useSWR, { mutate } from 'swr'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 const Container = styled(View, {
 	flex: 1,
@@ -59,15 +59,33 @@ const fetchOrders = async () => {
 }
 
 export default function Orders() {
-	const { data: orders = [], mutate: refreshOrders } = useSWR(
-		'orders',
-		fetchOrders,
-		{
-			refreshInterval: 0, // Only refresh on demand or when real-time update occurs
-			revalidateOnFocus: true,
-			dedupingInterval: 2000,
+	const queryClient = useQueryClient()
+
+	const { data: orders = [] } = useQuery({
+		queryKey: ['orders'],
+		queryFn: fetchOrders,
+		staleTime: 0, // Always fetch fresh data
+	})
+
+	const updateOrderMutation = useMutation({
+		mutationFn: async ({ id, status }: { id: string; status: string }) => {
+			const { error } = await supabase
+				.from('orders')
+				.update({ status })
+				.eq('id', id)
+
+			if (error) throw error
+			return { id, status }
 		},
-	)
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['orders'] })
+			queryClient.invalidateQueries({ queryKey: ['notifications'] })
+		},
+		onError: (error) => {
+			console.error('Error updating order status:', error)
+			Alert.alert('Error', 'An error occurred while updating the order status.')
+		},
+	})
 
 	const updateOrderStatus = async (id: string) => {
 		try {
@@ -82,25 +100,14 @@ export default function Orders() {
 				throw fetchError
 			}
 
-			// Update the order status
-			const { error: updateError } = await supabase
-				.from('orders')
-				.update({
-					status: nextStatusMap[order?.status as keyof typeof nextStatusMap],
-				})
-				.eq('id', id)
-				.select()
+			const newStatus =
+				nextStatusMap[order?.status as keyof typeof nextStatusMap]
 
-			if (updateError) {
-				throw updateError
-			}
-
-			// Refresh orders via SWR
-			await refreshOrders()
+			updateOrderMutation.mutate({ id, status: newStatus })
 
 			Alert.alert(
 				'Update',
-				`Order status updated to ${nextStatusMap[order?.status as keyof typeof nextStatusMap]} successfully!`,
+				`Order status updated to ${newStatus} successfully!`,
 			)
 		} catch (error) {
 			console.error('Error updating order status:', error)
@@ -128,9 +135,9 @@ export default function Orders() {
 			.on(
 				'postgres_changes',
 				{ event: '*', schema: 'public', table: 'orders' },
-				(payload) => {
-					console.log('Change received!', payload)
-					refreshOrders() // Refresh orders via SWR on any change
+				() => {
+					queryClient.invalidateQueries({ queryKey: ['orders'] })
+					queryClient.invalidateQueries({ queryKey: ['notifications'] })
 				},
 			)
 			.subscribe()
@@ -139,7 +146,7 @@ export default function Orders() {
 		return () => {
 			supabase.removeChannel(subscription)
 		}
-	}, [refreshOrders])
+	}, [queryClient])
 
 	return (
 		<Container>

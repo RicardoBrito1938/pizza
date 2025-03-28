@@ -20,7 +20,7 @@ import {
 import { getStatusBarHeight } from 'react-native-iphone-x-helper'
 import { supabase } from '@/supabase/supabase'
 import { fetchUser } from '@/utils/auth'
-import useSWR from 'swr'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchPizzaById } from '@/utils/api'
 import type { ProductProps } from '@/components/ui/product-card'
 
@@ -110,21 +110,54 @@ export default function Order() {
 	const router = useRouter()
 	const { id } = useLocalSearchParams()
 	const pizzaId = id ? String(id) : ''
+	const queryClient = useQueryClient()
 
-	const { data: user } = useSWR('/user', fetchUser)
-	const { data: pizza } = useSWR(pizzaId ? `pizza/${pizzaId}` : null, () =>
-		fetchPizzaById(pizzaId),
-	)
+	const { data: user } = useQuery({
+		queryKey: ['user'],
+		queryFn: fetchUser,
+	})
+
+	const { data: pizza } = useQuery({
+		queryKey: ['pizza', pizzaId],
+		queryFn: () => fetchPizzaById(pizzaId),
+		enabled: !!pizzaId,
+	})
 
 	const [size, setSize] = useState('')
 	const [quantity, setQuantity] = useState(0)
 	const [tableNumber, setTableNumber] = useState('0')
-	const [sendingOrder, setSendingOrder] = useState(false)
 
 	const amount =
 		size && pizza?.price_sizes && pizza.price_sizes[size]
 			? pizza.price_sizes[size] * quantity
 			: '0.00'
+
+	const orderMutation = useMutation({
+		mutationFn: async (orderData: {
+			quantity: number
+			amount: string | number
+			pizza: string | undefined
+			size: string
+			table_number: string
+			status: string
+			waiter_id: string | undefined
+			image: string | undefined
+		}) => {
+			const { error } = await supabase.from('orders').insert(orderData)
+			if (error) throw error
+			return true
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['orders'] })
+			queryClient.invalidateQueries({ queryKey: ['notifications'] })
+			Alert.alert('Order', 'Order placed successfully!')
+			router.push('/home')
+		},
+		onError: (error) => {
+			Alert.alert('Order', 'An error occurred while placing the order')
+			console.error('Error adding order:', error)
+		},
+	})
 
 	const handleOrder = async () => {
 		if (!size) {
@@ -140,46 +173,18 @@ export default function Order() {
 			return
 		}
 
-		try {
-			setSendingOrder(true)
-
-			const order = {
-				quantity,
-				amount,
-				pizza: pizza?.name,
-				size,
-				table_number: tableNumber,
-				status: 'preparing',
-				waiter_id: user?.id,
-				image: pizza?.photo_url,
-			}
-
-			const { error } = await supabase.from('orders').insert(order)
-
-			if (error) {
-				throw error
-			}
-
-			// Trigger a revalidation of the orders cache
-			// But don't use direct mutate import
-			if (typeof window !== 'undefined') {
-				// Clear or update existing cache entries
-				// without using external mutate
-				if (useSWR.cache) {
-					// These keys match the ones in our SWR hooks
-					useSWR.cache.delete('orders')
-					useSWR.cache.delete('notifications')
-				}
-			}
-
-			Alert.alert('Order', 'Order placed successfully!')
-			router.push('/home')
-		} catch (error) {
-			Alert.alert('Order', 'An error occurred while placing the order')
-			console.error('Error adding order:', error)
-		} finally {
-			setSendingOrder(false)
+		const order = {
+			quantity,
+			amount,
+			pizza: pizza?.name,
+			size,
+			table_number: tableNumber,
+			status: 'preparing',
+			waiter_id: user?.id,
+			image: pizza?.photo_url,
 		}
+
+		orderMutation.mutate(order)
 	}
 
 	return (
@@ -248,7 +253,11 @@ export default function Order() {
 
 					<Price>${amount}</Price>
 
-					<Button title='Add' onPress={handleOrder} loading={sendingOrder} />
+					<Button
+						title='Add'
+						onPress={handleOrder}
+						loading={orderMutation.isPending}
+					/>
 				</Form>
 			</ContentScroll>
 		</Container>

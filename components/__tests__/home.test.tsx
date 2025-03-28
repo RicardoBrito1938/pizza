@@ -1,6 +1,7 @@
 import { render, fireEvent } from '@testing-library/react-native'
 import Home from '@/app/(admin)/home'
 import { fetchPizzas } from '@/utils/api'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // Mock expo-router
 jest.mock('expo-router', () => ({
@@ -19,46 +20,72 @@ jest.mock('@/supabase/supabase', () => ({
 	},
 }))
 
-// Mock SWR
-jest.mock('swr', () => ({
-	__esModule: true,
-	default: jest.fn((key, fetcher) => {
-		// Mock user data
-		if (key === '/user') {
-			return {
-				data: { email: 'test@example.com', isAdmin: false },
-				mutate: jest.fn(),
-			}
-		}
+// Mock TanStack Query
+jest.mock('@tanstack/react-query', () => {
+	const originalModule = jest.requireActual('@tanstack/react-query')
 
-		// Mock pizzas data
-		if (Array.isArray(key) && key[0] === 'pizzas') {
-			return {
-				data: [
-					{
-						id: '1',
-						name: 'Pepperoni',
-						price: '22.00',
-						image_url: 'http://example.com/img.jpg',
-					},
-					{
-						id: '2',
-						name: 'Margherita',
-						price: '18.00',
-						image_url: 'http://example.com/img2.jpg',
-					},
-				],
-				mutate: jest.fn(),
+	return {
+		__esModule: true,
+		...originalModule,
+		useQuery: jest.fn().mockImplementation(({ queryKey }) => {
+			// Mock user data
+			if (queryKey[0] === 'user') {
+				return {
+					data: { email: 'test@example.com', isAdmin: false },
+				}
 			}
-		}
 
-		return { data: undefined, mutate: jest.fn() }
-	}),
-}))
+			// Mock pizzas data
+			if (queryKey[0] === 'pizzas') {
+				return {
+					data: [
+						{
+							id: '1',
+							name: 'Pepperoni',
+							price: '22.00',
+							image_url: 'http://example.com/img.jpg',
+						},
+						{
+							id: '2',
+							name: 'Margherita',
+							price: '18.00',
+							image_url: 'http://example.com/img2.jpg',
+						},
+					],
+				}
+			}
+
+			return { data: undefined }
+		}),
+		useMutation: jest.fn().mockImplementation(() => ({
+			mutate: jest.fn(),
+			isPending: false,
+		})),
+		useQueryClient: jest.fn().mockReturnValue({
+			invalidateQueries: jest.fn(),
+			setQueryData: jest.fn(),
+		}),
+	}
+})
+
+// Helper function to render with query client
+const renderWithQueryClient = (ui: React.ReactElement) => {
+	const queryClient = new QueryClient({
+		defaultOptions: {
+			queries: {
+				retry: false,
+			},
+		},
+	})
+
+	return render(
+		<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+	)
+}
 
 describe('Home Page', () => {
 	it('renders with static content from mock component', () => {
-		const { getByText } = render(<Home />)
+		const { getByText } = renderWithQueryClient(<Home />)
 
 		expect(getByText('Menu')).toBeTruthy()
 		expect(getByText('2 pizzas')).toBeTruthy()
@@ -66,7 +93,7 @@ describe('Home Page', () => {
 	})
 
 	it('allows searching for pizzas', () => {
-		const { getByTestId } = render(<Home />)
+		const { getByTestId } = renderWithQueryClient(<Home />)
 		const searchInput = getByTestId('home-search')
 
 		fireEvent.changeText(searchInput, 'pepperoni')
@@ -76,7 +103,7 @@ describe('Home Page', () => {
 	})
 
 	it('navigates to order page when a product is clicked', () => {
-		const { getAllByText } = render(<Home />)
+		const { getAllByText } = renderWithQueryClient(<Home />)
 
 		// Find the Pepperoni pizza card by its title and simulate press
 		const pepperoniCard = getAllByText('Pepperoni')[0]
@@ -87,7 +114,7 @@ describe('Home Page', () => {
 	})
 
 	it('shows logout button and handles logout', () => {
-		const { getByTestId } = render(<Home />)
+		const { getByTestId } = renderWithQueryClient(<Home />)
 
 		// Find and press the logout button
 		const logoutButton = getByTestId('icon-logout')
@@ -99,7 +126,7 @@ describe('Home Page', () => {
 	})
 
 	it('does not show admin features for non-admin users', () => {
-		const { queryByText } = render(<Home />)
+		const { queryByText } = renderWithQueryClient(<Home />)
 
 		// Regular users should not see the "Register pizza" button
 		expect(queryByText('Register pizza')).toBeNull()
@@ -109,47 +136,58 @@ describe('Home Page', () => {
 // Test for admin users
 describe('Home Page (Admin View)', () => {
 	beforeEach(() => {
-		// Override the SWR mock to return admin user
-		jest.mock('swr', () => ({
-			__esModule: true,
-			default: jest.fn((key, fetcher) => {
-				if (key === '/user') {
-					return {
-						data: { email: 'admin@example.com', isAdmin: true },
-						mutate: jest.fn(),
-					}
-				}
+		// Override the TanStack Query mock to return admin user
+		jest.mock('@tanstack/react-query', () => {
+			const originalModule = jest.requireActual('@tanstack/react-query')
 
-				// Return same pizza data
-				if (Array.isArray(key) && key[0] === 'pizzas') {
-					return {
-						data: [
-							{
-								id: '1',
-								name: 'Pepperoni',
-								price: '22.00',
-								image_url: 'http://example.com/img.jpg',
-							},
-							{
-								id: '2',
-								name: 'Margherita',
-								price: '18.00',
-								image_url: 'http://example.com/img2.jpg',
-							},
-						],
-						mutate: jest.fn(),
+			return {
+				__esModule: true,
+				...originalModule,
+				useQuery: jest.fn().mockImplementation(({ queryKey }) => {
+					if (queryKey[0] === 'user') {
+						return {
+							data: { email: 'admin@example.com', isAdmin: true },
+						}
 					}
-				}
 
-				return { data: undefined, mutate: jest.fn() }
-			}),
-		}))
+					// Return same pizza data
+					if (queryKey[0] === 'pizzas') {
+						return {
+							data: [
+								{
+									id: '1',
+									name: 'Pepperoni',
+									price: '22.00',
+									image_url: 'http://example.com/img.jpg',
+								},
+								{
+									id: '2',
+									name: 'Margherita',
+									price: '18.00',
+									image_url: 'http://example.com/img2.jpg',
+								},
+							],
+						}
+					}
+
+					return { data: undefined }
+				}),
+				useMutation: jest.fn().mockImplementation(() => ({
+					mutate: jest.fn(),
+					isPending: false,
+				})),
+				useQueryClient: jest.fn().mockReturnValue({
+					invalidateQueries: jest.fn(),
+					setQueryData: jest.fn(),
+				}),
+			}
+		})
 	})
 
 	it('shows admin features for admin users', () => {
 		// Note: This test may not work correctly without a better mock implementation
 		// that allows changing the mock between tests
-		// const { queryByText } = render(<Home />)
+		// const { queryByText } = renderWithQueryClient(<Home />)
 		// Admin users should see the "Register pizza" button
 		// expect(queryByText('Register pizza')).toBeTruthy()
 	})

@@ -3,7 +3,7 @@ import extendedTheme from '@/styles/extendedTheme'
 import { BottomMenu } from '@/components/ui/bottom-menu'
 import { useEffect } from 'react'
 import { supabase } from '@/supabase/supabase'
-import useSWR from 'swr'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 // Fetcher function for notifications
 const fetchNotifications = async () => {
@@ -20,14 +20,13 @@ const fetchNotifications = async () => {
 }
 
 export default function TabLayout() {
-	const { data: notifications = 0, mutate: refreshNotifications } = useSWR(
-		'notifications',
-		fetchNotifications,
-		{
-			refreshInterval: 0, // Only refresh on demand or when real-time update occurs
-			revalidateOnFocus: true,
-		},
-	)
+	const queryClient = useQueryClient()
+
+	const { data: notifications = 0 } = useQuery({
+		queryKey: ['notifications'],
+		queryFn: fetchNotifications,
+		staleTime: 1000 * 30, // 30 seconds
+	})
 
 	useEffect(() => {
 		const subscription = supabase
@@ -37,7 +36,7 @@ export default function TabLayout() {
 				{ event: 'INSERT', schema: 'public', table: 'orders' },
 				(payload) => {
 					if (payload.new.status === 'prepared') {
-						refreshNotifications()
+						queryClient.invalidateQueries({ queryKey: ['notifications'] })
 					}
 				},
 			)
@@ -51,7 +50,7 @@ export default function TabLayout() {
 						(payload.old.status === 'prepared' &&
 							payload.new.status !== 'prepared')
 					) {
-						refreshNotifications()
+						queryClient.invalidateQueries({ queryKey: ['notifications'] })
 					}
 				},
 			)
@@ -60,7 +59,7 @@ export default function TabLayout() {
 		return () => {
 			supabase.removeChannel(subscription)
 		}
-	}, [refreshNotifications])
+	}, [queryClient])
 
 	return (
 		<Tabs
