@@ -149,7 +149,7 @@ export default function SignIn() {
 		},
 		onSuccess: async () => {
 			await queryClient.invalidateQueries({ queryKey: ['user'] })
-			router.navigate('/(admin)/home')
+			router.replace('/(admin)/home')
 		},
 		onError: (error: Error) => {
 			Alert.alert('Login Error', error.message || 'Authentication failed')

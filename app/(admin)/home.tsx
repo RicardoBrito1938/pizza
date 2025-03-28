@@ -104,7 +104,7 @@ export default function Home() {
 		},
 		onSuccess: () => {
 			queryClient.setQueryData(['user'], null)
-			router.navigate('/sign-in')
+			router.replace('/sign-in')
 		},
 		onError: (error: Error) => {
 			Alert.alert('Sign Out Error', error.message || 'Sign out failed')
