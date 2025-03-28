@@ -1,10 +1,10 @@
 import { useFonts } from 'expo-font'
-import { Slot, SplashScreen, ScreenProps, Stack, router } from 'expo-router'
+import { SplashScreen, Stack, router } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
-
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useState } from 'react'
 import { DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display'
 import { DMSans_400Regular, DMSans_700Bold } from '@expo-google-fonts/dm-sans'
-import { ButtonBack } from '@/components/ui/button-back'
 import { MaterialIcons } from '@expo/vector-icons'
 import extendedTheme from '@/styles/extendedTheme'
 
@@ -17,12 +17,14 @@ export default function RootLayout() {
 		DMSans_700Bold,
 	})
 
+	const [queryClient] = useState(() => new QueryClient())
+
 	if (!fontsLoaded) {
 		return null
 	}
 
 	return (
-		<>
+		<QueryClientProvider client={queryClient}>
 			<StatusBar style='auto' />
 			<Stack screenOptions={{ headerShown: false }}>
 				<Stack.Screen
@@ -43,6 +45,6 @@ export default function RootLayout() {
 					}}
 				/>
 			</Stack>
-		</>
+		</QueryClientProvider>
 	)
 }

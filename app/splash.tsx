@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { View, Text as RNText } from 'react-native'
 import Animated, { FadeIn, runOnJS } from 'react-native-reanimated'
 import { SplashScreen as ExpoSplashScreen, useRouter } from 'expo-router'
-import useSWR from 'swr'
+import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/supabase/supabase'
 import { styled } from '@fast-styles/react'
 import extendedTheme from '@/styles/extendedTheme'
@@ -22,7 +22,6 @@ const Text = styled(Animated.createAnimatedComponent(RNText), {
 	fontWeight: 'bold',
 })
 
-// Define the fetchUser function directly in the splash screen
 const fetchUser = async () => {
 	const { data: session } = await supabase.auth.getSession()
 	if (!session?.session?.user) return null
@@ -46,7 +45,14 @@ const fetchUser = async () => {
 
 export default function SplashScreen() {
 	const router = useRouter()
-	const { data: user, error, isLoading } = useSWR('/user', fetchUser)
+	const {
+		data: user,
+		error,
+		isLoading,
+	} = useQuery({
+		queryKey: ['user'],
+		queryFn: fetchUser,
+	})
 	const [animationComplete, setAnimationComplete] = useState(false)
 
 	useEffect(() => {
