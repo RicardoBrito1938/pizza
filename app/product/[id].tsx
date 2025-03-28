@@ -61,9 +61,10 @@ const Upload = styled(View, {
 	justifyContent: 'center',
 	alignItems: 'center',
 	marginVertical: 32,
+	position: 'relative',
 })
 
-const PickImageButton = styled(Button, {
+const PickImageButton = styled(View, {
 	maxWidth: 90,
 	marginLeft: 32,
 })
@@ -378,11 +379,13 @@ export default function Product() {
 				<Upload>
 					<Photo uri={photoUrl} />
 					{!id && (
-						<PickImageButton
-							title='Pick'
-							variant='primary'
-							onPress={handleImagePick}
-						/>
+						<PickImageButton>
+							<Button
+								title='Pick'
+								variant='primary'
+								onPress={handleImagePick}
+							/>
+						</PickImageButton>
 					)}
 				</Upload>
 
