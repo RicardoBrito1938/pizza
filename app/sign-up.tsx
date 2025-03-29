@@ -53,12 +53,10 @@ const Title = styled(Text, {
 const Brand = styled(Image, {
 	height: 240,
 	marginTop: 64,
+	width: '100%',
 
 	attributes: {
 		resizeMode: 'contain',
-		// source: {
-		// 	uri: 'https://www.kindpng.com/picc/m/95-954719_pizza-chef-vector-italian-pizza-chef-png-transparent.png',
-		// },
 		source: brandImg,
 	},
 })
