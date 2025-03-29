@@ -53,6 +53,7 @@ const Brand = styled(Image, {
 	height: 340,
 	marginTop: 64,
 	marginBottom: 32,
+	width: '100%',
 
 	attributes: {
 		resizeMode: 'contain',
